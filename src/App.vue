@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-screen bg-[#0a0a0a] text-white">
-    <NavigationBar :paginaAtual="paginaAtual" @navegar="mudarPagina" />
+    <NavigationBar v-if="$route.name !== 'login'" :paginaAtual="paginaAtual" @navegar="mudarPagina" />
     <router-view></router-view>
   </div>
 </template>

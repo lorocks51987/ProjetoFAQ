@@ -1,61 +1,49 @@
 <template>
   <div class="min-h-screen flex justify-center items-center bg-cover bg-center" 
-       style="background-image: url('https://wallpapershome.com/images/pages/pic_h/16242.jpg')">
+       :style="{ backgroundImage: `url(${backgroundImage})` }">
     <div class="wrapper" :class="{ active: isRegister }">
       <span class="icon-close" @click="closeForm">
-        <ion-icon :icon="close"></ion-icon>
+        <i class="fas fa-times"></i>
       </span>
 
       <!-- Login Form -->
       <div class="form-box login">
-        <h2>Login</h2>
+        <h2>Entrar</h2>
         <form @submit.prevent="handleLogin">
           <div class="input-box">
-            <span class="icon"><ion-icon :icon="mail"></ion-icon></span>
-            <input type="email" v-model="loginForm.email" required>
-            <label>Email</label>
+            <span class="icon"><i class="fas fa-user"></i></span>
+            <input type="text" v-model="loginForm.username" required>
+            <label>Nome de usuário</label>
           </div>
           <div class="input-box">
-            <span class="icon"><ion-icon :icon="lockClosed"></ion-icon></span>
+            <span class="icon"><i class="fas fa-lock"></i></span>
             <input type="password" v-model="loginForm.password" required>
-            <label>Password</label>
+            <label>Senha</label>
           </div>
-          <div class="remember-forgot">
-            <label><input type="checkbox" v-model="loginForm.remember">Remember me</label>
-            <a href="#" @click.prevent="forgotPassword">Forgot Password?</a>
-          </div>
-          <button type="submit" class="btn">Login</button>
+          <button type="submit" class="btn">Entrar</button>
           <div class="login-register">
-            <p>Don't have an account?<a href="#" class="register-link" @click.prevent="toggleForm">Register</a></p>
+            <p>Não tem uma conta?  <a href="#" class="register-link" @click.prevent="toggleForm">Registrar</a></p>
           </div>
         </form>
       </div>
 
       <!-- Register Form -->
       <div class="form-box register">
-        <h2>Registration</h2>
+        <h2>Registro</h2>
         <form @submit.prevent="handleRegister">
           <div class="input-box">
-            <span class="icon"><ion-icon :icon="person"></ion-icon></span>
+            <span class="icon"><i class="fas fa-user"></i></span>
             <input type="text" v-model="registerForm.username" required>
-            <label>Username</label>
+            <label>Nome de usuário</label>
           </div>
           <div class="input-box">
-            <span class="icon"><ion-icon :icon="mail"></ion-icon></span>
-            <input type="email" v-model="registerForm.email" required>
-            <label>Email</label>
-          </div>
-          <div class="input-box">
-            <span class="icon"><ion-icon :icon="lockClosed"></ion-icon></span>
+            <span class="icon"><i class="fas fa-lock"></i></span>
             <input type="password" v-model="registerForm.password" required>
-            <label>Password</label>
+            <label>Senha</label>
           </div>
-          <div class="remember-forgot">
-            <label><input type="checkbox" v-model="registerForm.terms">I agree to the terms & conditions</label>
-          </div>
-          <button type="submit" class="btn">Register</button>
+          <button type="submit" class="btn">Registrar</button>
           <div class="login-register">
-            <p>Already have an account?<a href="#" class="login-link" @click.prevent="toggleForm">Login</a></p>
+            <p>Já tem uma conta?  <a href="#" class="login-link" @click.prevent="toggleForm">Entrar</a></p>
           </div>
         </form>
       </div>
@@ -64,7 +52,7 @@
 </template>
 
 <script>
-import { mail, lockClosed, person, close } from 'ionicons/icons'
+import backgroundImage from '@/assets/images/fundo.png'
 
 export default {
   name: 'LoginView',
@@ -72,20 +60,14 @@ export default {
     return {
       isRegister: false,
       loginForm: {
-        email: '',
-        password: '',
-        remember: false
+        username: '',
+        password: ''
       },
       registerForm: {
         username: '',
-        email: '',
-        password: '',
-        terms: false
+        password: ''
       },
-      mail,
-      lockClosed,
-      person,
-      close
+      backgroundImage
     }
   },
   methods: {
@@ -94,23 +76,19 @@ export default {
     },
     closeForm() {
       this.isRegister = false
-      this.$router.push('/home')
+      this.$router.push('/')
     },
     handleLogin() {
       // Implementar lógica de login
       console.log('Login attempt:', this.loginForm)
       // Após login bem-sucedido:
-      this.$router.push('/home')
+      this.$router.push('/')
     },
     handleRegister() {
       // Implementar lógica de registro
       console.log('Register attempt:', this.registerForm)
       // Após registro bem-sucedido:
       this.isRegister = false
-    },
-    forgotPassword() {
-      // Implementar lógica de recuperação de senha
-      console.log('Forgot password clicked')
     }
   }
 }
@@ -121,16 +99,16 @@ export default {
   position: relative;
   width: 400px;
   height: 440px;
-  background: transparent;
-  border: 2px solid rgba(255, 255, 255, .5);
+  background: rgba(10, 10, 10, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 20px;
-  backdrop-filter: blur(20px);
-  box-shadow: 0 0 30px rgba(0, 0, 0, .5);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.3);
   display: flex;
   justify-content: center;
   align-items: center;
   overflow: hidden;
-  transition: height .2s ease;
+  transition: height 0.2s ease;
 }
 
 .wrapper.active {
@@ -143,7 +121,7 @@ export default {
 }
 
 .wrapper .form-box.login {
-  transition: transform .18s ease;
+  transition: transform 0.18s ease;
   transform: translateX(0);
 }
 
@@ -159,7 +137,7 @@ export default {
 }
 
 .wrapper.active .form-box.register {
-  transition: transform .18s ease;
+  transition: transform 0.18s ease;
   transform: translateX(0);
 }
 
@@ -169,7 +147,7 @@ export default {
   right: 0;
   width: 45px;
   height: 45px;
-  background: #570457;
+  background: rgba(10, 10, 10, 0.8);
   font-size: 2em;
   color: #fff;
   display: flex;
@@ -178,20 +156,32 @@ export default {
   border-bottom-left-radius: 20px;
   cursor: pointer;
   z-index: 1;
+  transition: all 0.3s ease;
+}
+
+.wrapper .icon-close:hover {
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .form-box h2 {
   font-size: 2em;
-  color: #570457;
+  color: #fff;
   text-align: center;
+  margin-bottom: 30px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .input-box {
   position: relative;
   width: 100%;
   height: 50px;
-  border-bottom: 2px solid #570457;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
   margin: 30px 0;
+  transition: all 0.3s ease;
+}
+
+.input-box:focus-within {
+  border-bottom-color: rgba(255, 255, 255, 0.3);
 }
 
 .input-box label {
@@ -200,15 +190,16 @@ export default {
   left: 5px;
   transform: translateY(-50%);
   font-size: 1em;
-  color: #570457;
+  color: rgba(255, 255, 255, 0.8);
   font-weight: 500;
   pointer-events: none;
-  transition: .5s;
+  transition: 0.5s;
 }
 
 .input-box input:focus~label,
 .input-box input:valid~label {
-  top: -5px
+  top: -5px;
+  color: #fff;
 }
 
 .input-box input {
@@ -218,7 +209,7 @@ export default {
   border: none;
   outline: none;
   font-size: 1em;
-  color: #570457;
+  color: #fff;
   font-weight: 600;
   padding: 0 35px 0 5px;
 }
@@ -227,61 +218,55 @@ export default {
   position: absolute;
   right: 8px;
   font-size: 1.2em;
-  color: #570457;
+  color: rgba(255, 255, 255, 0.8);
   line-height: 57px;
+  transition: all 0.3s ease;
 }
 
-.remember-forgot {
-  font-size: .9em;
-  color: #570457;
-  font-weight: 500;
-  margin: -15px 0 15px;
-  display: flex;
-  justify-content: space-between;
-}
-
-.remember-forgot label input {
-  accent-color: #570457;
-  margin-right: 3px;
-}
-
-.remember-forgot a {
-  color: #570457;
-  text-decoration: none;
-}
-
-.remember-forgot a:hover {
-  text-decoration: underline;
+.input-box:focus-within .icon {
+  color: #fff;
 }
 
 .btn {
   width: 100%;
   height: 45px;
-  background: #570457;
-  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   outline: none;
   border-radius: 6px;
   cursor: pointer;
   font-size: 1em;
   color: #fff;
   font-weight: 500;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
 }
 
 .login-register {
-  font-size: .9em;
-  color: #570457;
+  font-size: 0.9em;
+  color: rgba(255, 255, 255, 0.8);
   text-align: center;
   font-weight: 500;
   margin: 25px 0 10px;
 }
 
 .login-register p a {
-  color: #570457;
+  color: rgba(255, 255, 255, 0.8);
   text-decoration: none;
   font-weight: 600;
+  transition: all 0.3s ease;
 }
 
 .login-register p a:hover {
+  color: #fff;
   text-decoration: underline;
 }
 </style> 

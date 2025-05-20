@@ -47,7 +47,6 @@
               >
                 <div class="text-sm text-[#00FF88] mb-4">
                   <p>Autor: {{ faq.autor }}</p>
-                  <p>Produto: {{ faq.produto }}</p>
                 </div>
                 <div class="flex space-x-4">
                   <div class="flex-1">
@@ -77,36 +76,34 @@
           </div>
         </div>
 
-        <!-- FAQs por Produto -->
+        <!-- FAQs Gerais -->
         <div class="space-y-4">
-          <div v-for="(faqs, produto) in faqsPorProduto" :key="produto" class="mb-8">
-            <h2 class="text-xl font-bold text-[#00FF88] font-['Orbitron'] mb-4">{{ produto }}</h2>
-            <div class="space-y-2">
-              <div 
-                v-for="faq in faqs" 
-                :key="faq.id"
-                class="bg-[#0a0a0a] rounded-lg overflow-hidden"
+          <h2 class="text-xl font-bold text-[#00FF88] font-['Orbitron'] mb-4">Perguntas Frequentes Gerais</h2>
+          <div class="space-y-2">
+            <div 
+              v-for="faq in faqsGerais" 
+              :key="faq.id"
+              class="bg-[#0a0a0a] rounded-lg overflow-hidden"
+            >
+              <!-- Cabeçalho do Dropdown -->
+              <button 
+                @click="toggleFaq(faq.id)"
+                class="w-full p-4 flex justify-between items-center text-left hover:bg-[#1a1a1a] transition-colors"
               >
-                <!-- Cabeçalho do Dropdown -->
-                <button 
-                  @click="toggleFaq(faq.id)"
-                  class="w-full p-4 flex justify-between items-center text-left hover:bg-[#1a1a1a] transition-colors"
-                >
-                  <h3 class="text-lg font-semibold text-white">{{ faq.question }}</h3>
-                  <span class="text-[#00FF88] transform transition-transform" :class="{ 'rotate-180': openFaqs.includes(faq.id) }">
-                    ▼
-                  </span>
-                </button>
-                
-                <!-- Conteúdo do Dropdown -->
-                <div 
-                  v-show="openFaqs.includes(faq.id)"
-                  class="p-4 border-t border-[#00FF88]/20"
-                >
-                  <p class="text-gray-300 mb-2">{{ faq.answer }}</p>
-                  <div class="text-sm text-[#00FF88]">
-                    <p>Autor: {{ faq.autor }}</p>
-                  </div>
+                <h3 class="text-lg font-semibold text-white">{{ faq.question }}</h3>
+                <span class="text-[#00FF88] transform transition-transform" :class="{ 'rotate-180': openFaqs.includes(faq.id) }">
+                  ▼
+                </span>
+              </button>
+              
+              <!-- Conteúdo do Dropdown -->
+              <div 
+                v-show="openFaqs.includes(faq.id)"
+                class="p-4 border-t border-[#00FF88]/20"
+              >
+                <p class="text-gray-300 mb-2">{{ faq.answer }}</p>
+                <div class="text-sm text-[#00FF88]">
+                  <p>Autor: {{ faq.autor }}</p>
                 </div>
               </div>
             </div>
@@ -120,17 +117,49 @@
       <div class="bg-[#1a1a1a] rounded-lg p-6 w-full max-w-lg">
         <h2 class="text-xl font-bold text-[#00FF88] font-['Orbitron'] mb-4">Nova Pergunta</h2>
         <div class="space-y-4">
+          <!-- Tipo de Pergunta -->
           <div>
-            <label class="block text-white mb-2">Produto</label>
+            <label class="block text-white mb-2">Tipo de Pergunta</label>
+            <div class="flex space-x-4">
+              <button 
+                @click="novaPergunta.tipo = 'loja'"
+                class="flex-1 px-4 py-2 rounded-lg border transition-colors font-['Orbitron']"
+                :class="[
+                  novaPergunta.tipo === 'loja' 
+                    ? 'bg-[#00FF88] text-[#1a1a1a] border-[#00FF88]' 
+                    : 'bg-[#0a0a0a] text-white border-[#00FF88]/20 hover:border-[#00FF88]'
+                ]"
+              >
+                Sobre a Loja
+              </button>
+              <button 
+                @click="novaPergunta.tipo = 'produto'"
+                class="flex-1 px-4 py-2 rounded-lg border transition-colors font-['Orbitron']"
+                :class="[
+                  novaPergunta.tipo === 'produto' 
+                    ? 'bg-[#00FF88] text-[#1a1a1a] border-[#00FF88]' 
+                    : 'bg-[#0a0a0a] text-white border-[#00FF88]/20 hover:border-[#00FF88]'
+                ]"
+              >
+                Sobre um Produto
+              </button>
+            </div>
+          </div>
+
+          <!-- Seleção de Produto (apenas se tipo for 'produto') -->
+          <div v-if="novaPergunta.tipo === 'produto'">
+            <label class="block text-white mb-2">Selecione o Produto</label>
             <select 
-              v-model="novaPergunta.produto"
+              v-model="novaPergunta.produtoId"
               class="w-full px-4 py-2 bg-[#0a0a0a] text-white rounded-lg border border-[#00FF88]/20 focus:border-[#00FF88] focus:outline-none"
             >
-              <option value="Smartphone XYZ">Smartphone XYZ</option>
-              <option value="Notebook Pro">Notebook Pro</option>
-              <option value="Smart TV 4K">Smart TV 4K</option>
+              <option value="" disabled>Escolha um produto</option>
+              <option value="1">Smartphone XYZ</option>
+              <option value="2">Notebook Pro</option>
+              <option value="3">Smart TV 4K</option>
             </select>
           </div>
+
           <div>
             <label class="block text-white mb-2">Sua Pergunta</label>
             <textarea 
@@ -157,6 +186,7 @@
             <button 
               @click="enviarNovaPergunta"
               class="px-4 py-2 bg-[#00FF88] text-[#1a1a1a] rounded-lg hover:bg-[#00cc6a] transition-colors font-['Orbitron']"
+              :disabled="!novaPergunta.tipo || !novaPergunta.question || !novaPergunta.autor || (novaPergunta.tipo === 'produto' && !novaPergunta.produtoId)"
             >
               Enviar Pergunta
             </button>
@@ -175,101 +205,49 @@ export default {
       openFaqs: [],
       showNewQuestionModal: false,
       novaPergunta: {
-        produto: '',
+        tipo: 'loja',
+        produtoId: '',
         question: '',
         autor: ''
       },
       perguntasSemResposta: [
         {
-          id: 10,
-          question: 'O smartphone tem suporte a 5G?',
+          id: 1,
+          question: 'Como posso entrar em contato com o suporte?',
           autor: 'Carlos Eduardo',
-          produto: 'Smartphone XYZ',
           novaResposta: '',
           respostaError: null,
           data: new Date('2024-03-15')
         },
         {
-          id: 11,
-          question: 'A TV tem suporte a Dolby Vision?',
+          id: 2,
+          question: 'Quais são os métodos de pagamento aceitos?',
           autor: 'Mariana Silva',
-          produto: 'Smart TV 4K',
           novaResposta: '',
           respostaError: null,
           data: new Date('2024-03-14')
         }
       ],
-      faqsPorProduto: {
-        'Smartphone XYZ': [
-          {
-            id: 1,
-            question: 'Qual a garantia deste smartphone?',
-            answer: 'Este produto possui garantia de 12 meses contra defeitos de fabricação.',
-            autor: 'João Silva',
-            produto: 'Smartphone XYZ'
-          },
-          {
-            id: 2,
-            question: 'O smartphone vem com carregador?',
-            answer: 'Sim, o produto inclui carregador rápido de 25W na caixa.',
-            autor: 'Maria Santos',
-            produto: 'Smartphone XYZ'
-          },
-          {
-            id: 3,
-            question: 'Qual o tempo de bateria?',
-            answer: 'A bateria de 5000mAh oferece até 2 dias de uso moderado.',
-            autor: 'Pedro Oliveira',
-            produto: 'Smartphone XYZ'
-          }
-        ],
-        'Notebook Pro': [
-          {
-            id: 4,
-            question: 'Qual o sistema operacional?',
-            answer: 'O notebook vem com Windows 11 Pro pré-instalado.',
-            autor: 'Ana Costa',
-            produto: 'Notebook Pro'
-          },
-          {
-            id: 5,
-            question: 'Possui entrada HDMI?',
-            answer: 'Sim, possui 2 portas HDMI 2.0 para conexão com monitores externos.',
-            autor: 'Carlos Mendes',
-            produto: 'Notebook Pro'
-          },
-          {
-            id: 6,
-            question: 'Qual o peso do notebook?',
-            answer: 'O notebook pesa aproximadamente 1.8kg, sendo leve e portátil.',
-            autor: 'Juliana Lima',
-            produto: 'Notebook Pro'
-          }
-        ],
-        'Smart TV 4K': [
-          {
-            id: 7,
-            question: 'Possui Netflix?',
-            answer: 'Sim, a TV vem com Netflix e outros aplicativos de streaming pré-instalados.',
-            autor: 'Roberto Alves',
-            produto: 'Smart TV 4K'
-          },
-          {
-            id: 8,
-            question: 'Quantas entradas HDMI?',
-            answer: 'A TV possui 4 entradas HDMI 2.1 para conexão de diversos dispositivos.',
-            autor: 'Fernanda Souza',
-            produto: 'Smart TV 4K'
-          },
-          {
-            id: 9,
-            question: 'Qual o consumo de energia?',
-            answer: 'A TV possui certificação de baixo consumo de energia, classe A+.',
-            autor: 'Lucas Martins',
-            produto: 'Smart TV 4K'
-          }
-        ]
-      }
+      faqsGerais: [
+        {
+          id: 1,
+          question: 'Como funciona a garantia dos produtos?',
+          answer: 'Todos os nossos produtos possuem garantia de 12 meses contra defeitos de fabricação. A garantia cobre problemas de hardware e software que não sejam causados por uso inadequado.',
+          autor: 'João Silva'
+        },
+        {
+          id: 2,
+          question: 'Qual o prazo de entrega?',
+          answer: 'O prazo de entrega varia de acordo com a sua localização. Em média, as entregas são realizadas em 3-5 dias úteis após a confirmação do pagamento.',
+          autor: 'Maria Santos'
+        },
+        {
+          id: 3,
+          question: 'Posso trocar ou devolver um produto?',
+          answer: 'Sim, você tem até 7 dias para trocar ou devolver um produto, desde que ele esteja em perfeito estado e com todos os acessórios originais.',
+          autor: 'Pedro Oliveira'
+        }
+      ]
     }
   },
   computed: {
@@ -287,16 +265,26 @@ export default {
       }
     },
     enviarNovaPergunta() {
-      if (!this.novaPergunta.produto || !this.novaPergunta.question || !this.novaPergunta.autor) {
+      if (!this.novaPergunta.tipo || !this.novaPergunta.question || !this.novaPergunta.autor) {
         alert('Por favor, preencha todos os campos')
         return
       }
 
+      if (this.novaPergunta.tipo === 'produto' && !this.novaPergunta.produtoId) {
+        alert('Por favor, selecione um produto')
+        return
+      }
+
+      if (this.novaPergunta.tipo === 'produto') {
+        this.$router.push(`/produto/${this.novaPergunta.produtoId}`)
+        this.showNewQuestionModal = false
+        return
+      }
+
       const novaPergunta = {
-        id: Date.now(), // ID único baseado no timestamp
+        id: Date.now(),
         question: this.novaPergunta.question,
         autor: this.novaPergunta.autor,
-        produto: this.novaPergunta.produto,
         novaResposta: '',
         respostaError: null,
         data: new Date()
@@ -304,7 +292,7 @@ export default {
 
       this.perguntasSemResposta.push(novaPergunta)
       this.showNewQuestionModal = false
-      this.novaPergunta = { produto: '', question: '', autor: '' }
+      this.novaPergunta = { tipo: 'loja', produtoId: '', question: '', autor: '' }
     },
     responderPergunta(faq) {
       if (!faq.novaResposta) {
@@ -312,18 +300,12 @@ export default {
         return
       }
 
-      // Encontra o produto correto no faqsPorProduto
-      if (!this.faqsPorProduto[faq.produto]) {
-        this.faqsPorProduto[faq.produto] = []
-      }
-
-      // Adiciona a pergunta respondida ao faqsPorProduto
-      this.faqsPorProduto[faq.produto].push({
+      // Adiciona a pergunta respondida ao faqsGerais
+      this.faqsGerais.push({
         id: faq.id,
         question: faq.question,
         answer: faq.novaResposta,
-        autor: faq.autor,
-        produto: faq.produto
+        autor: faq.autor
       })
 
       // Remove a pergunta da lista de perguntas sem resposta

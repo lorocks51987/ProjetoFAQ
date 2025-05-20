@@ -8,10 +8,6 @@ import LoginView from '../views/LoginView.vue'
 const routes = [
     {
         path: '/',
-        redirect: '/login'
-    },
-    {
-        path: '/home',
         name: 'home',
         component: HomeView
     },

@@ -38,7 +38,15 @@
 
             <!-- FAQ do Produto com Dropdown -->
             <div class="space-y-4">
-              <h2 class="text-xl font-bold text-[#00FF88] font-['Orbitron']">Perguntas Frequentes</h2>
+              <div class="flex justify-between items-center">
+                <h2 class="text-xl font-bold text-[#00FF88] font-['Orbitron']">Perguntas Frequentes do Produto</h2>
+                <button 
+                  @click="showNewQuestionModal = true"
+                  class="px-4 py-2 bg-[#00FF88] text-[#1a1a1a] rounded-lg hover:bg-[#00cc6a] transition-colors font-['Orbitron']"
+                >
+                  Nova Pergunta
+                </button>
+              </div>
               <div class="space-y-2">
                 <div 
                   v-for="faq in productFaqs" 
@@ -64,7 +72,6 @@
                     <p class="text-gray-300 mb-2">{{ faq.answer }}</p>
                     <div class="text-sm text-[#00FF88]">
                       <p>Autor: {{ faq.autor }}</p>
-                      <p>Produto: {{ faq.produto }}</p>
                     </div>
                   </div>
                 </div>
@@ -75,6 +82,45 @@
       </div>
       <div v-else class="p-6 text-center text-white">
         Carregando...
+      </div>
+    </div>
+
+    <!-- Modal de Nova Pergunta -->
+    <div v-if="showNewQuestionModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+      <div class="bg-[#1a1a1a] rounded-lg p-6 w-full max-w-lg">
+        <h2 class="text-xl font-bold text-[#00FF88] font-['Orbitron'] mb-4">Nova Pergunta</h2>
+        <div class="space-y-4">
+          <div>
+            <label class="block text-white mb-2">Sua Pergunta</label>
+            <textarea 
+              v-model="novaPergunta.question"
+              class="w-full px-4 py-2 bg-[#0a0a0a] text-white rounded-lg border border-[#00FF88]/20 focus:border-[#00FF88] focus:outline-none"
+              rows="3"
+            ></textarea>
+          </div>
+          <div>
+            <label class="block text-white mb-2">Seu Nome</label>
+            <input 
+              v-model="novaPergunta.autor"
+              type="text"
+              class="w-full px-4 py-2 bg-[#0a0a0a] text-white rounded-lg border border-[#00FF88]/20 focus:border-[#00FF88] focus:outline-none"
+            />
+          </div>
+          <div class="flex justify-end space-x-4">
+            <button 
+              @click="showNewQuestionModal = false"
+              class="px-4 py-2 text-[#00FF88] hover:text-[#00cc6a] transition-colors font-['Orbitron']"
+            >
+              Cancelar
+            </button>
+            <button 
+              @click="enviarNovaPergunta"
+              class="px-4 py-2 bg-[#00FF88] text-[#1a1a1a] rounded-lg hover:bg-[#00cc6a] transition-colors font-['Orbitron']"
+            >
+              Enviar Pergunta
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -96,30 +142,32 @@ export default {
         descricao: 'Um smartphone incrível com as melhores especificações do mercado. Tela AMOLED de 6.5 polegadas, processador octa-core, 8GB de RAM e 128GB de armazenamento.',
         image: phone
       },
+      showNewQuestionModal: false,
+      novaPergunta: {
+        question: '',
+        autor: ''
+      },
       productFaqs: [
         {
           id: 1,
           question: 'Qual a garantia deste smartphone?',
           answer: 'Este produto possui garantia de 12 meses contra defeitos de fabricação. A garantia cobre problemas de hardware e software que não sejam causados por uso inadequado.',
-          autor: 'João Silva',
-          produto: 'Smartphone XYZ'
+          autor: 'João Silva'
         },
         {
           id: 2,
           question: 'O smartphone vem com carregador?',
           answer: 'Sim, o produto inclui carregador rápido de 25W na caixa, além de cabo USB-C, capa protetora e película de vidro temperado.',
-          autor: 'Maria Santos',
-          produto: 'Smartphone XYZ'
+          autor: 'Maria Santos'
         },
         {
           id: 3,
           question: 'Qual o tempo de bateria?',
           answer: 'A bateria de 5000mAh oferece até 2 dias de uso moderado. Com uso intenso, dura aproximadamente 8 horas de tela ligada. O carregamento rápido de 25W recarrega 50% da bateria em apenas 30 minutos.',
-          autor: 'Pedro Oliveira',
-          produto: 'Smartphone XYZ'
+          autor: 'Pedro Oliveira'
         }
       ],
-      openFaqs: [] // Array para controlar quais FAQs estão abertos
+      openFaqs: []
     }
   },
   created() {
@@ -177,22 +225,19 @@ export default {
             id: 1,
             question: 'Qual a garantia deste smartphone?',
             answer: 'Este produto possui garantia de 12 meses contra defeitos de fabricação. A garantia cobre problemas de hardware e software que não sejam causados por uso inadequado.',
-            autor: 'João Silva',
-            produto: 'Smartphone XYZ'
+            autor: 'João Silva'
           },
           {
             id: 2,
             question: 'O smartphone vem com carregador?',
             answer: 'Sim, o produto inclui carregador rápido de 25W na caixa, além de cabo USB-C, capa protetora e película de vidro temperado.',
-            autor: 'Maria Santos',
-            produto: 'Smartphone XYZ'
+            autor: 'Maria Santos'
           },
           {
             id: 3,
             question: 'Qual o tempo de bateria?',
             answer: 'A bateria de 5000mAh oferece até 2 dias de uso moderado. Com uso intenso, dura aproximadamente 8 horas de tela ligada. O carregamento rápido de 25W recarrega 50% da bateria em apenas 30 minutos.',
-            autor: 'Pedro Oliveira',
-            produto: 'Smartphone XYZ'
+            autor: 'Pedro Oliveira'
           }
         ],
         '2': [
@@ -200,22 +245,19 @@ export default {
             id: 4,
             question: 'Qual o sistema operacional?',
             answer: 'O notebook vem com Windows 11 Pro pré-instalado, incluindo todas as atualizações mais recentes. O sistema está otimizado para melhor desempenho e segurança.',
-            autor: 'Ana Costa',
-            produto: 'Notebook Pro'
+            autor: 'Ana Costa'
           },
           {
             id: 5,
             question: 'Possui entrada HDMI?',
             answer: 'Sim, possui 2 portas HDMI 2.0 para conexão com monitores externos, além de 1 porta USB-C com suporte a Thunderbolt 4, 3 portas USB 3.2 e 1 porta Ethernet.',
-            autor: 'Carlos Mendes',
-            produto: 'Notebook Pro'
+            autor: 'Carlos Mendes'
           },
           {
             id: 6,
             question: 'Qual o peso do notebook?',
             answer: 'O notebook pesa aproximadamente 1.8kg, sendo leve e portátil. Suas dimensões são 35.6 x 24.3 x 1.8 cm, tornando-o ideal para transporte diário.',
-            autor: 'Juliana Lima',
-            produto: 'Notebook Pro'
+            autor: 'Juliana Lima'
           }
         ],
         '3': [
@@ -223,22 +265,19 @@ export default {
             id: 7,
             question: 'Possui Netflix?',
             answer: 'Sim, a TV vem com Netflix e outros aplicativos de streaming pré-instalados, incluindo Amazon Prime Video, Disney+, HBO Max e YouTube. Todos os aplicativos são atualizados automaticamente.',
-            autor: 'Roberto Alves',
-            produto: 'Smart TV 4K'
+            autor: 'Roberto Alves'
           },
           {
             id: 8,
             question: 'Quantas entradas HDMI?',
             answer: 'A TV possui 4 entradas HDMI 2.1 para conexão de diversos dispositivos, suportando resolução 4K a 120Hz, HDR e VRR. Também possui 2 portas USB 2.0 para conexão de dispositivos externos.',
-            autor: 'Fernanda Souza',
-            produto: 'Smart TV 4K'
+            autor: 'Fernanda Souza'
           },
           {
             id: 9,
             question: 'Qual o consumo de energia?',
             answer: 'A TV possui certificação de baixo consumo de energia, classe A+. Em modo de uso normal, consome aproximadamente 120W. Possui modo de economia de energia que reduz o consumo em até 30%.',
-            autor: 'Lucas Martins',
-            produto: 'Smart TV 4K'
+            autor: 'Lucas Martins'
           }
         ]
       }
@@ -247,6 +286,24 @@ export default {
       this.productFaqs = faqs[id] || faqs['1']
       // Limpa os FAQs abertos ao trocar de produto
       this.openFaqs = []
+    },
+    enviarNovaPergunta() {
+      if (!this.novaPergunta.question || !this.novaPergunta.autor) {
+        alert('Por favor, preencha todos os campos')
+        return
+      }
+
+      const novaPergunta = {
+        id: Date.now(),
+        question: this.novaPergunta.question,
+        autor: this.novaPergunta.autor,
+        answer: '',
+        isOpen: true
+      }
+
+      this.productFaqs.push(novaPergunta)
+      this.showNewQuestionModal = false
+      this.novaPergunta = { question: '', autor: '' }
     }
   }
 }
