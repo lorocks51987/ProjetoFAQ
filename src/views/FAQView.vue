@@ -1,222 +1,123 @@
 <template>
-  <div class="container mx-auto px-4 py-8">
-    <div class="bg-[#1a1a1a] rounded-lg shadow-lg overflow-hidden">
+  <div class="container">
+    <div class="bg-[#1a1a1a] rounded-xl shadow-lg overflow-hidden">
       <!-- Cabeçalho -->
-      <div class="p-4 border-b border-[#00FF88]/20 flex justify-between items-center">
+      <header>
         <div class="flex items-center space-x-4">
-          <h1 class="text-2xl font-bold text-[#00FF88] font-['Orbitron']">Perguntas Frequentes</h1>
-          <span v-if="perguntasSemResposta.length > 0" class="px-3 py-1 bg-[#9A00FF] text-white rounded-full text-sm font-['Orbitron']">
+          <h1 class="title-primary">Perguntas Frequentes</h1>
+          <span v-if="perguntasSemResposta.length > 0" class="badge">
             {{ perguntasSemResposta.length }} pendente{{ perguntasSemResposta.length > 1 ? 's' : '' }}
           </span>
         </div>
-        <button 
-          @click="showNewQuestionModal = true"
-          class="px-4 py-2 bg-[#00FF88] text-[#1a1a1a] rounded-lg hover:bg-[#00cc6a] transition-colors font-['Orbitron']"
-        >
-          Nova Pergunta
-        </button>
-      </div>
+        <p class="text-gray-400 mt-2 font-['Lora'] text-lg">Encontre respostas para suas dúvidas mais comuns</p>
+        <div class="mt-6">
+          <BaseButton @click="showNewQuestionModal = true">
+            Nova Pergunta
+          </BaseButton>
+        </div>
+      </header>
 
       <!-- Lista de FAQs -->
-      <div class="p-6">
+      <div class="p-8 space-y-12">
         <!-- Perguntas sem Resposta -->
-        <div v-if="perguntasSemResposta.length > 0" class="mb-8">
-          <h2 class="text-xl font-bold text-[#00FF88] font-['Orbitron'] mb-4">Perguntas Aguardando Resposta</h2>
-          <div class="space-y-2">
-            <div 
-              v-for="faq in perguntasSemRespostaOrdenadas" 
+        <section v-if="perguntasSemResposta.length > 0">
+          <h2 class="title-secondary">Perguntas Aguardando Resposta</h2>
+          <div class="space-y-6">
+            <FaqCard
+              v-for="faq in perguntasSemRespostaOrdenadas"
               :key="faq.id"
-              class="bg-[#0a0a0a] rounded-lg overflow-hidden"
+              :question="faq.question"
+              :is-open="openPendingFaqs.includes(faq.id)"
+              @toggle="togglePendingFaq(faq.id)"
             >
-              <!-- Cabeçalho do Dropdown -->
-              <button 
-                @click="toggleFaq(faq.id)"
-                class="w-full p-4 flex justify-between items-center text-left hover:bg-[#1a1a1a] transition-colors"
-              >
-                <h3 class="text-lg font-semibold text-white">{{ faq.question }}</h3>
-                <span class="text-[#00FF88] transform transition-transform" :class="{ 'rotate-180': openFaqs.includes(faq.id) }">
-                  ▼
-                </span>
-              </button>
-              
-              <!-- Conteúdo do Dropdown -->
-              <div 
-                v-show="openFaqs.includes(faq.id)"
-                class="p-4 border-t border-[#00FF88]/20 transition-all duration-300 ease-in-out"
-                :class="{ 'opacity-100': openFaqs.includes(faq.id), 'opacity-0': !openFaqs.includes(faq.id) }"
-              >
-                <div class="text-sm text-[#00FF88] mb-4">
-                  <p>Autor: {{ faq.autor }}</p>
-                </div>
-                <div class="flex space-x-4">
-                  <div class="flex-1">
-                    <input 
-                      v-model="faq.novaResposta"
-                      type="text"
-                      placeholder="Digite sua resposta..."
-                      class="w-full px-4 py-2 bg-[#1a1a1a] text-white rounded-lg border transition-colors"
-                      :class="[
-                        faq.novaResposta ? 'border-[#00FF88]' : 'border-[#00FF88]/20',
-                        faq.respostaError ? 'border-red-500' : ''
-                      ]"
-                      @input="faq.respostaError = false"
-                    />
-                    <p v-if="faq.respostaError" class="text-red-500 text-sm mt-1">{{ faq.respostaError }}</p>
-                  </div>
-                  <button 
-                    @click="responderPergunta(faq)"
-                    class="px-4 py-2 bg-[#00FF88] text-[#1a1a1a] rounded-lg hover:bg-[#00cc6a] transition-colors font-['Orbitron'] disabled:opacity-50 disabled:cursor-not-allowed"
-                    :disabled="!faq.novaResposta"
-                  >
-                    Responder
-                  </button>
-                </div>
+              <div class="text-lg text-[#00FF88]/90 mb-6 flex items-center space-x-2">
+                <span class="font-['Lora']">Autor:</span>
+                <span class="font-['Playfair_Display']">{{ faq.autor }}</span>
+                <span class="text-sm text-gray-400 ml-4">{{ new Date(faq.data).toLocaleDateString() }}</span>
               </div>
-            </div>
+              <div class="flex space-x-4">
+                <div class="flex-1">
+                  <BaseInput
+                    v-model="faq.novaResposta"
+                    placeholder="Digite sua resposta..."
+                    :error="faq.respostaError"
+                    @update:modelValue="faq.respostaError = ''"
+                  />
+                </div>
+                <BaseButton
+                  @click="responderPergunta(faq)"
+                  :disabled="!faq.novaResposta"
+                >
+                  Responder
+                </BaseButton>
+              </div>
+            </FaqCard>
           </div>
-        </div>
+        </section>
 
         <!-- FAQs Gerais -->
-        <div class="space-y-4">
-          <h2 class="text-xl font-bold text-[#00FF88] font-['Orbitron'] mb-4">Perguntas Frequentes Gerais</h2>
-          <div class="space-y-2">
-            <div 
-              v-for="faq in faqsGerais" 
+        <section>
+          <h2 class="title-secondary">Perguntas Frequentes Gerais</h2>
+          <div class="space-y-6">
+            <FaqCard
+              v-for="faq in faqsGerais"
               :key="faq.id"
-              class="bg-[#0a0a0a] rounded-lg overflow-hidden"
+              :question="faq.question"
+              :is-open="openGeneralFaqs.includes(faq.id)"
+              @toggle="toggleGeneralFaq(faq.id)"
             >
-              <!-- Cabeçalho do Dropdown -->
-              <button 
-                @click="toggleFaq(faq.id)"
-                class="w-full p-4 flex justify-between items-center text-left hover:bg-[#1a1a1a] transition-colors"
-              >
-                <h3 class="text-lg font-semibold text-white">{{ faq.question }}</h3>
-                <span class="text-[#00FF88] transform transition-transform" :class="{ 'rotate-180': openFaqs.includes(faq.id) }">
-                  ▼
-                </span>
-              </button>
-              
-              <!-- Conteúdo do Dropdown -->
-              <div 
-                v-show="openFaqs.includes(faq.id)"
-                class="p-4 border-t border-[#00FF88]/20"
-              >
-                <p class="text-gray-300 mb-2">{{ faq.answer }}</p>
-                <div class="text-sm text-[#00FF88]">
-                  <p>Autor: {{ faq.autor }}</p>
-                </div>
+              <p class="faq-answer">{{ faq.answer }}</p>
+              <div class="text-lg text-[#00FF88]/90 flex items-center space-x-2">
+                <span class="font-['Lora']">Autor:</span>
+                <span class="font-['Playfair_Display']">{{ faq.autor }}</span>
               </div>
-            </div>
+            </FaqCard>
           </div>
-        </div>
+        </section>
       </div>
     </div>
 
     <!-- Modal de Nova Pergunta -->
-    <div v-if="showNewQuestionModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-      <div class="bg-[#1a1a1a] rounded-lg p-6 w-full max-w-lg">
-        <h2 class="text-xl font-bold text-[#00FF88] font-['Orbitron'] mb-4">Nova Pergunta</h2>
-        <div class="space-y-4">
-          <!-- Tipo de Pergunta -->
-          <div>
-            <label class="block text-white mb-2">Tipo de Pergunta</label>
-            <div class="flex space-x-4">
-              <button 
-                @click="novaPergunta.tipo = 'loja'"
-                class="flex-1 px-4 py-2 rounded-lg border transition-colors font-['Orbitron']"
-                :class="[
-                  novaPergunta.tipo === 'loja' 
-                    ? 'bg-[#00FF88] text-[#1a1a1a] border-[#00FF88]' 
-                    : 'bg-[#0a0a0a] text-white border-[#00FF88]/20 hover:border-[#00FF88]'
-                ]"
-              >
-                Sobre a Loja
-              </button>
-              <button 
-                @click="novaPergunta.tipo = 'produto'"
-                class="flex-1 px-4 py-2 rounded-lg border transition-colors font-['Orbitron']"
-                :class="[
-                  novaPergunta.tipo === 'produto' 
-                    ? 'bg-[#00FF88] text-[#1a1a1a] border-[#00FF88]' 
-                    : 'bg-[#0a0a0a] text-white border-[#00FF88]/20 hover:border-[#00FF88]'
-                ]"
-              >
-                Sobre um Produto
-              </button>
-            </div>
-          </div>
-
-          <!-- Seleção de Produto (apenas se tipo for 'produto') -->
-          <div v-if="novaPergunta.tipo === 'produto'">
-            <label class="block text-white mb-2">Selecione o Produto</label>
-            <select 
-              v-model="novaPergunta.produtoId"
-              class="w-full px-4 py-2 bg-[#0a0a0a] text-white rounded-lg border border-[#00FF88]/20 focus:border-[#00FF88] focus:outline-none"
-            >
-              <option value="" disabled>Escolha um produto</option>
-              <option value="1">Smartphone XYZ</option>
-              <option value="2">Notebook Pro</option>
-              <option value="3">Smart TV 4K</option>
-            </select>
-          </div>
-
-          <div>
-            <label class="block text-white mb-2">Sua Pergunta</label>
-            <textarea 
-              v-model="novaPergunta.question"
-              class="w-full px-4 py-2 bg-[#0a0a0a] text-white rounded-lg border border-[#00FF88]/20 focus:border-[#00FF88] focus:outline-none"
-              rows="3"
-            ></textarea>
-          </div>
-          <div>
-            <label class="block text-white mb-2">Seu Nome</label>
-            <input 
-              v-model="novaPergunta.autor"
-              type="text"
-              class="w-full px-4 py-2 bg-[#0a0a0a] text-white rounded-lg border border-[#00FF88]/20 focus:border-[#00FF88] focus:outline-none"
-            />
-          </div>
-          <div class="flex justify-end space-x-4">
-            <button 
-              @click="showNewQuestionModal = false"
-              class="px-4 py-2 text-[#00FF88] hover:text-[#00cc6a] transition-colors font-['Orbitron']"
-            >
-              Cancelar
-            </button>
-            <button 
-              @click="enviarNovaPergunta"
-              class="px-4 py-2 bg-[#00FF88] text-[#1a1a1a] rounded-lg hover:bg-[#00cc6a] transition-colors font-['Orbitron']"
-              :disabled="!novaPergunta.tipo || !novaPergunta.question || !novaPergunta.autor || (novaPergunta.tipo === 'produto' && !novaPergunta.produtoId)"
-            >
-              Enviar Pergunta
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+    <NewQuestionModal
+      v-if="showNewQuestionModal"
+      :produtos="produtos"
+      @close="showNewQuestionModal = false"
+      @submit="handleNewQuestion"
+    />
   </div>
 </template>
 
 <script>
+import BaseButton from '@/components/base/BaseButton.vue'
+import BaseInput from '@/components/base/BaseInput.vue'
+import FaqCard from '@/components/faq/FaqCard.vue'
+import NewQuestionModal from '@/components/faq/NewQuestionModal.vue'
+
 export default {
   name: 'FAQView',
+  components: {
+    BaseButton,
+    BaseInput,
+    FaqCard,
+    NewQuestionModal
+  },
   data() {
     return {
-      openFaqs: [],
+      openPendingFaqs: [],
+      openGeneralFaqs: [],
       showNewQuestionModal: false,
-      novaPergunta: {
-        tipo: 'loja',
-        produtoId: '',
-        question: '',
-        autor: ''
-      },
+      produtos: [
+        { id: '1', nome: 'Smartphone XYZ' },
+        { id: '2', nome: 'Notebook Pro' },
+        { id: '3', nome: 'Smart TV 4K' }
+      ],
       perguntasSemResposta: [
         {
           id: 1,
           question: 'Como posso entrar em contato com o suporte?',
           autor: 'Carlos Eduardo',
           novaResposta: '',
-          respostaError: null,
+          respostaError: '',
           data: new Date('2024-03-15')
         },
         {
@@ -224,7 +125,7 @@ export default {
           question: 'Quais são os métodos de pagamento aceitos?',
           autor: 'Mariana Silva',
           novaResposta: '',
-          respostaError: null,
+          respostaError: '',
           data: new Date('2024-03-14')
         }
       ],
@@ -256,43 +157,42 @@ export default {
     }
   },
   methods: {
-    toggleFaq(faqId) {
-      const index = this.openFaqs.indexOf(faqId)
-      if (index === -1) {
-        this.openFaqs.push(faqId)
+    togglePendingFaq(faqId) {
+      if (this.openPendingFaqs.includes(faqId)) {
+        this.openPendingFaqs = []
+        this.openGeneralFaqs = []
       } else {
-        this.openFaqs.splice(index, 1)
+        this.openPendingFaqs = [faqId]
+        this.openGeneralFaqs = []
       }
     },
-    enviarNovaPergunta() {
-      if (!this.novaPergunta.tipo || !this.novaPergunta.question || !this.novaPergunta.autor) {
-        alert('Por favor, preencha todos os campos')
-        return
+    toggleGeneralFaq(faqId) {
+      if (this.openGeneralFaqs.includes(faqId)) {
+        this.openGeneralFaqs = []
+        this.openPendingFaqs = []
+      } else {
+        this.openGeneralFaqs = [faqId]
+        this.openPendingFaqs = []
       }
-
-      if (this.novaPergunta.tipo === 'produto' && !this.novaPergunta.produtoId) {
-        alert('Por favor, selecione um produto')
-        return
-      }
-
-      if (this.novaPergunta.tipo === 'produto') {
-        this.$router.push(`/produto/${this.novaPergunta.produtoId}`)
+    },
+    handleNewQuestion(formData) {
+      if (formData.tipo === 'produto') {
+        this.$router.push(`/produto/${formData.produtoId}`)
         this.showNewQuestionModal = false
         return
       }
 
-      const novaPergunta = {
+      this.perguntasSemResposta.push({
         id: Date.now(),
-        question: this.novaPergunta.question,
-        autor: this.novaPergunta.autor,
+        question: formData.question,
+        autor: formData.autor,
         novaResposta: '',
-        respostaError: null,
-        data: new Date()
-      }
-
-      this.perguntasSemResposta.push(novaPergunta)
+        respostaError: '',
+        data: new Date(),
+        tipo: 'servicos'
+      })
+      
       this.showNewQuestionModal = false
-      this.novaPergunta = { tipo: 'loja', produtoId: '', question: '', autor: '' }
     },
     responderPergunta(faq) {
       if (!faq.novaResposta) {
@@ -300,7 +200,6 @@ export default {
         return
       }
 
-      // Adiciona a pergunta respondida ao faqsGerais
       this.faqsGerais.push({
         id: faq.id,
         question: faq.question,
@@ -308,12 +207,51 @@ export default {
         autor: faq.autor
       })
 
-      // Remove a pergunta da lista de perguntas sem resposta
-      const index = this.perguntasSemResposta.findIndex(p => p.id === faq.id)
-      if (index !== -1) {
-        this.perguntasSemResposta.splice(index, 1)
-      }
+      this.perguntasSemResposta = this.perguntasSemResposta.filter(p => p.id !== faq.id)
     }
   }
 }
-</script> 
+</script>
+
+<style scoped>
+.title-primary {
+  @apply text-4xl font-semibold text-transparent bg-clip-text bg-gradient-to-r from-[#00FF88] to-[#00cc6a] font-['Playfair_Display'] tracking-wide;
+}
+
+.title-secondary {
+  @apply text-3xl font-semibold text-transparent bg-clip-text bg-gradient-to-r from-[#00FF88] to-[#00cc6a] font-['Playfair_Display'] tracking-wide mb-8;
+}
+
+.badge {
+  @apply px-4 py-2 bg-gradient-to-r from-[#ff0000] to-[#cc0000] text-white rounded-full text-lg font-['Lora'] shadow-lg shadow-red-500/20;
+}
+
+.faq-answer {
+  @apply text-gray-300 text-lg leading-relaxed mb-6 font-['Lora'];
+}
+
+/* Container principal */
+.container {
+  @apply max-w-5xl mx-auto px-4 py-12;
+}
+
+/* Card principal */
+.bg-[#1a1a1a] {
+  @apply shadow-xl shadow-[#00FF88]/5 backdrop-blur-sm;
+}
+
+/* Cabeçalho */
+header {
+  @apply p-8 border-b border-[#00FF88]/20 bg-gradient-to-r from-[#1a1a1a] to-[#1a1a1a]/95;
+}
+
+/* Seções */
+section {
+  @apply transition-all duration-300 ease-in-out;
+}
+
+/* Animação suave para os cards */
+.space-y-6 > * {
+  @apply transition-all duration-300 ease-in-out;
+}
+</style> 

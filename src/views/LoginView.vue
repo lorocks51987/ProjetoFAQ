@@ -2,9 +2,7 @@
   <div class="min-h-screen flex justify-center items-center bg-cover bg-center" 
        :style="{ backgroundImage: `url(${backgroundImage})` }">
     <div class="wrapper" :class="{ active: isRegister }">
-      <span class="icon-close" @click="closeForm">
-        <i class="fas fa-times"></i>
-      </span>
+      
 
       <!-- Login Form -->
       <div class="form-box login">

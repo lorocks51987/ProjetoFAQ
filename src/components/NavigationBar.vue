@@ -23,7 +23,7 @@
                     </router-link>
                     <button 
                         @click="logout"
-                        class="px-4 py-2 text-[#aaaaaa] hover:text-[#00FF88] transition-all duration-300 ease-in-out relative after:content-[''] after:absolute after:w-0 after:h-0.5 after:bg-[#00FF88] after:left-0 after:bottom-0 after:transition-all after:duration-300 hover:after:w-full font-['Orbitron']"
+                        class=" px-4 py-2 text-[#aaaaaa] hover:text-[#00FF88] transition-all duration-300 ease-in-out relative after:content-[''] after:absolute after:w-0 after:h-0.5 after:bg-[#00FF88] after:left-0 after:bottom-0 after:transition-all after:duration-300 hover:after:w-full font-['Orbitron']"
                     >
                         Sair
                     </button>

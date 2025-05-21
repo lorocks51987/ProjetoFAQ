@@ -19,7 +19,7 @@
             <img 
               :src="product.image" 
               :alt="product.nome"
-              class="w-full h-[400px] object-cover rounded-lg"
+              class="w-[712px] h-[712px] object-cover rounded-lg"
             />
           </div>
 
