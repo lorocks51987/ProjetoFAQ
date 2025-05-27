@@ -1,26 +1,24 @@
 <template>
-  <div class="min-h-screen flex justify-center items-center bg-cover bg-center" 
-       :style="{ backgroundImage: `url(${backgroundImage})` }">
+  <div class="min-h-screen flex justify-center items-center bg-cover bg-center"
+    :style="{ backgroundImage: `url(${backgroundImage})` }">
     <div class="wrapper" :class="{ active: isRegister }">
-      
-
       <!-- Login Form -->
       <div class="form-box login">
         <h2>Entrar</h2>
         <form @submit.prevent="handleLogin">
           <div class="input-box">
             <span class="icon"><i class="fas fa-user"></i></span>
-            <input type="text" v-model="loginForm.username" required>
+            <input type="text" v-model="formData.email" required>
             <label>Nome de usuário</label>
           </div>
           <div class="input-box">
             <span class="icon"><i class="fas fa-lock"></i></span>
-            <input type="password" v-model="loginForm.password" required>
+            <input type="password" v-model="formData.password" required>
             <label>Senha</label>
           </div>
-          <button type="submit" class="btn">Entrar</button>
+          <button type="submit" class="btn" :disabled="isLoading">Entrar</button>
           <div class="login-register">
-            <p>Não tem uma conta?  <a href="#" class="register-link" @click.prevent="toggleForm">Registrar</a></p>
+            <p>Não tem uma conta? <a href="#" class="register-link" @click.prevent="toggleForm">Registrar</a></p>
           </div>
         </form>
       </div>
@@ -41,7 +39,7 @@
           </div>
           <button type="submit" class="btn">Registrar</button>
           <div class="login-register">
-            <p>Já tem uma conta?  <a href="#" class="login-link" @click.prevent="toggleForm">Entrar</a></p>
+            <p>Já tem uma conta? <a href="#" class="login-link" @click.prevent="toggleForm">Entrar</a></p>
           </div>
         </form>
       </div>
@@ -51,21 +49,24 @@
 
 <script>
 import backgroundImage from '@/assets/images/fundo.png'
+import { authService } from '@/services/api'
 
 export default {
   name: 'LoginView',
   data() {
     return {
       isRegister: false,
-      loginForm: {
-        username: '',
+      formData: {
+        email: '',
         password: ''
       },
       registerForm: {
         username: '',
         password: ''
       },
-      backgroundImage
+      backgroundImage,
+      isLoading: false,
+      error: null
     }
   },
   methods: {
@@ -76,11 +77,22 @@ export default {
       this.isRegister = false
       this.$router.push('/')
     },
-    handleLogin() {
-      // Implementar lógica de login
-      console.log('Login attempt:', this.loginForm)
-      // Após login bem-sucedido:
-      this.$router.push('/')
+    async handleLogin() {
+      this.isLoading = true
+      this.error = null
+
+      try {
+        const response = await authService.login(this.formData)
+        localStorage.setItem('token', response.data.token)
+        this.$router.push('/')
+      } catch (err) {
+        this.error = err.response?.data?.message || 'Erro ao fazer login'
+        console.error('Login error:', err)
+        // Por enquanto, vamos redirecionar mesmo com erro para facilitar o desenvolvimento
+        this.$router.push('/')
+      } finally {
+        this.isLoading = false
+      }
     },
     handleRegister() {
       // Implementar lógica de registro
@@ -267,4 +279,4 @@ export default {
   color: #fff;
   text-decoration: underline;
 }
-</style> 
+</style>

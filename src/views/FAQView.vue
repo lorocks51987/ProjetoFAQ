@@ -23,13 +23,8 @@
         <section v-if="perguntasSemResposta.length > 0">
           <h2 class="title-secondary">Perguntas Aguardando Resposta</h2>
           <div class="space-y-6">
-            <FaqCard
-              v-for="faq in perguntasSemRespostaOrdenadas"
-              :key="faq.id"
-              :question="faq.question"
-              :is-open="openPendingFaqs.includes(faq.id)"
-              @toggle="togglePendingFaq(faq.id)"
-            >
+            <FaqCard v-for="faq in perguntasSemRespostaOrdenadas" :key="faq.id" :question="faq.question"
+              :is-open="openPendingFaqs.includes(faq.id)" @toggle="togglePendingFaq(faq.id)">
               <div class="text-lg text-[#00FF88]/90 mb-6 flex items-center space-x-2">
                 <span class="font-['Lora']">Autor:</span>
                 <span class="font-['Playfair_Display']">{{ faq.autor }}</span>
@@ -37,17 +32,10 @@
               </div>
               <div class="flex space-x-4">
                 <div class="flex-1">
-                  <BaseInput
-                    v-model="faq.novaResposta"
-                    placeholder="Digite sua resposta..."
-                    :error="faq.respostaError"
-                    @update:modelValue="faq.respostaError = ''"
-                  />
+                  <BaseInput v-model="faq.novaResposta" placeholder="Digite sua resposta..." :error="faq.respostaError"
+                    @update:modelValue="faq.respostaError = ''" />
                 </div>
-                <BaseButton
-                  @click="responderPergunta(faq)"
-                  :disabled="!faq.novaResposta"
-                >
+                <BaseButton @click="responderPergunta(faq)" :disabled="!faq.novaResposta">
                   Responder
                 </BaseButton>
               </div>
@@ -59,13 +47,8 @@
         <section>
           <h2 class="title-secondary">Perguntas Frequentes Gerais</h2>
           <div class="space-y-6">
-            <FaqCard
-              v-for="faq in faqsGerais"
-              :key="faq.id"
-              :question="faq.question"
-              :is-open="openGeneralFaqs.includes(faq.id)"
-              @toggle="toggleGeneralFaq(faq.id)"
-            >
+            <FaqCard v-for="faq in faqsGerais" :key="faq.id" :question="faq.question"
+              :is-open="openGeneralFaqs.includes(faq.id)" @toggle="toggleGeneralFaq(faq.id)">
               <p class="faq-answer">{{ faq.answer }}</p>
               <div class="text-lg text-[#00FF88]/90 flex items-center space-x-2">
                 <span class="font-['Lora']">Autor:</span>
@@ -78,12 +61,7 @@
     </div>
 
     <!-- Modal de Nova Pergunta -->
-    <NewQuestionModal
-      v-if="showNewQuestionModal"
-      :produtos="produtos"
-      @close="showNewQuestionModal = false"
-      @submit="handleNewQuestion"
-    />
+    <NewQuestionModal v-if="showNewQuestionModal" @close="showNewQuestionModal = false" @submit="handleNewQuestion" />
   </div>
 </template>
 
@@ -92,6 +70,7 @@ import BaseButton from '@/components/base/BaseButton.vue'
 import BaseInput from '@/components/base/BaseInput.vue'
 import FaqCard from '@/components/faq/FaqCard.vue'
 import NewQuestionModal from '@/components/faq/NewQuestionModal.vue'
+import { useFaqStore } from '@/store/faq'
 
 export default {
   name: 'FAQView',
@@ -106,52 +85,16 @@ export default {
       openPendingFaqs: [],
       openGeneralFaqs: [],
       showNewQuestionModal: false,
-      produtos: [
-        { id: '1', nome: 'Smartphone XYZ' },
-        { id: '2', nome: 'Notebook Pro' },
-        { id: '3', nome: 'Smart TV 4K' }
-      ],
-      perguntasSemResposta: [
-        {
-          id: 1,
-          question: 'Como posso entrar em contato com o suporte?',
-          autor: 'Carlos Eduardo',
-          novaResposta: '',
-          respostaError: '',
-          data: new Date('2024-03-15')
-        },
-        {
-          id: 2,
-          question: 'Quais são os métodos de pagamento aceitos?',
-          autor: 'Mariana Silva',
-          novaResposta: '',
-          respostaError: '',
-          data: new Date('2024-03-14')
-        }
-      ],
-      faqsGerais: [
-        {
-          id: 1,
-          question: 'Como funciona a garantia dos produtos?',
-          answer: 'Todos os nossos produtos possuem garantia de 12 meses contra defeitos de fabricação. A garantia cobre problemas de hardware e software que não sejam causados por uso inadequado.',
-          autor: 'João Silva'
-        },
-        {
-          id: 2,
-          question: 'Qual o prazo de entrega?',
-          answer: 'O prazo de entrega varia de acordo com a sua localização. Em média, as entregas são realizadas em 3-5 dias úteis após a confirmação do pagamento.',
-          autor: 'Maria Santos'
-        },
-        {
-          id: 3,
-          question: 'Posso trocar ou devolver um produto?',
-          answer: 'Sim, você tem até 7 dias para trocar ou devolver um produto, desde que ele esteja em perfeito estado e com todos os acessórios originais.',
-          autor: 'Pedro Oliveira'
-        }
-      ]
+      faqStore: useFaqStore()
     }
   },
   computed: {
+    perguntasSemResposta() {
+      return this.faqStore.questions.filter(q => !q.answer)
+    },
+    faqsGerais() {
+      return this.faqStore.questions.filter(q => q.answer)
+    },
     perguntasSemRespostaOrdenadas() {
       return [...this.perguntasSemResposta].sort((a, b) => b.data - a.data)
     }
@@ -175,40 +118,38 @@ export default {
         this.openPendingFaqs = []
       }
     },
-    handleNewQuestion(formData) {
-      if (formData.tipo === 'produto') {
-        this.$router.push(`/produto/${formData.produtoId}`)
-        this.showNewQuestionModal = false
-        return
-      }
+    async handleNewQuestion(formData) {
+      try {
+        const questionData = {
+          type: formData.tipo,
+          productId: formData.produtoId,
+          question: formData.question,
+          author: formData.autor
+        }
 
-      this.perguntasSemResposta.push({
-        id: Date.now(),
-        question: formData.question,
-        autor: formData.autor,
-        novaResposta: '',
-        respostaError: '',
-        data: new Date(),
-        tipo: 'servicos'
-      })
-      
-      this.showNewQuestionModal = false
+        await this.faqStore.addQuestion(questionData)
+        this.showNewQuestionModal = false
+      } catch (error) {
+        console.error('Error adding question:', error)
+      }
     },
-    responderPergunta(faq) {
+    async responderPergunta(faq) {
       if (!faq.novaResposta) {
         faq.respostaError = 'Por favor, digite uma resposta'
         return
       }
 
-      this.faqsGerais.push({
-        id: faq.id,
-        question: faq.question,
-        answer: faq.novaResposta,
-        autor: faq.autor
-      })
-
-      this.perguntasSemResposta = this.perguntasSemResposta.filter(p => p.id !== faq.id)
+      try {
+        await this.faqStore.updateQuestion(faq.id, {
+          answer: faq.novaResposta
+        })
+      } catch (error) {
+        console.error('Error answering question:', error)
+      }
     }
+  },
+  async created() {
+    await this.faqStore.getQuestions()
   }
 }
 </script>
@@ -251,7 +192,7 @@ section {
 }
 
 /* Animação suave para os cards */
-.space-y-6 > * {
+.space-y-6>* {
   @apply transition-all duration-300 ease-in-out;
 }
-</style> 
+</style>
