@@ -1,198 +1,251 @@
 <template>
-  <div class="container">
-    <div class="bg-[#1a1a1a] rounded-xl shadow-lg overflow-hidden">
-      <!-- Cabeçalho -->
-      <header>
-        <div class="flex items-center space-x-4">
-          <h1 class="title-primary">Perguntas Frequentes</h1>
-          <span v-if="perguntasSemResposta.length > 0" class="badge">
-            {{ perguntasSemResposta.length }} pendente{{ perguntasSemResposta.length > 1 ? 's' : '' }}
-          </span>
-        </div>
-        <p class="text-gray-400 mt-2 font-['Lora'] text-lg">Encontre respostas para suas dúvidas mais comuns</p>
-        <div class="mt-6">
-          <BaseButton @click="showNewQuestionModal = true">
-            Nova Pergunta
-          </BaseButton>
-        </div>
-      </header>
+  <div class="container mx-auto px-4 py-8">
+    <!-- Cabeçalho -->
+    <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+      <div>
+        <h1 class="text-3xl font-bold text-white mb-2">FAQ</h1>
+        <p class="text-gray-400">Gerencie as perguntas frequentes do sistema</p>
+      </div>
+      <BaseButton @click="showNewQuestionModal = true" class="bg-primary hover:bg-primary-dark flex items-center gap-2">
+        Nova Pergunta
+      </BaseButton>
+    </div>
 
-      <!-- Lista de FAQs -->
-      <div class="p-8 space-y-12">
-        <!-- Perguntas sem Resposta -->
-        <section v-if="perguntasSemResposta.length > 0">
-          <h2 class="title-secondary">Perguntas Aguardando Resposta</h2>
-          <div class="space-y-6">
-            <FaqCard v-for="faq in perguntasSemRespostaOrdenadas" :key="faq.id" :question="faq.question"
-              :is-open="openPendingFaqs.includes(faq.id)" @toggle="togglePendingFaq(faq.id)">
-              <div class="text-lg text-[#00FF88]/90 mb-6 flex items-center space-x-2">
-                <span class="font-['Lora']">Autor:</span>
-                <span class="font-['Playfair_Display']">{{ faq.autor }}</span>
-                <span class="text-sm text-gray-400 ml-4">{{ new Date(faq.data).toLocaleDateString() }}</span>
-              </div>
-              <div class="flex space-x-4">
-                <div class="flex-1">
-                  <BaseInput v-model="faq.novaResposta" placeholder="Digite sua resposta..." :error="faq.respostaError"
-                    @update:modelValue="faq.respostaError = ''" />
-                </div>
-                <BaseButton @click="responderPergunta(faq)" :disabled="!faq.novaResposta">
-                  Responder
-                </BaseButton>
-              </div>
-            </FaqCard>
+    <!-- Lista de FAQs -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <!-- Perguntas sem resposta -->
+      <div v-for="faq in unansweredQuestions" :key="faq.id"
+        class="bg-dark/50 rounded-xl p-6 border border-gray-800 hover:border-primary/50 transition-colors">
+        <div class="flex flex-col h-full">
+          <div class="flex-1">
+            <p class="text-white text-lg mb-2">{{ faq.question }}</p>
+            <div class="flex items-center gap-4 text-sm text-gray-400 mb-4">
+              <span>{{ faq.autor }}</span>
+              <span>{{ formatDate(faq.data) }}</span>
+            </div>
           </div>
-        </section>
+          <div class="flex gap-2 mt-4">
+            <BaseButton @click="toggleResponseForm(faq.id)" class="bg-primary hover:bg-primary-dark flex-1">
+              Responder
+            </BaseButton>
+            <BaseButton @click="deleteQuestion(faq.id)"
+              class="bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/50 flex-1">
+              Excluir
+            </BaseButton>
+          </div>
 
-        <!-- FAQs Gerais -->
-        <section>
-          <h2 class="title-secondary">Perguntas Frequentes Gerais</h2>
-          <div class="space-y-6">
-            <FaqCard v-for="faq in faqsGerais" :key="faq.id" :question="faq.question"
-              :is-open="openGeneralFaqs.includes(faq.id)" @toggle="toggleGeneralFaq(faq.id)">
-              <p class="faq-answer">{{ faq.answer }}</p>
-              <div class="text-lg text-[#00FF88]/90 flex items-center space-x-2">
-                <span class="font-['Lora']">Autor:</span>
-                <span class="font-['Playfair_Display']">{{ faq.autor }}</span>
-              </div>
-            </FaqCard>
+          <!-- Formulário de resposta -->
+          <div v-if="activeResponseForm === faq.id" class="mt-4 pt-4 border-t border-gray-800">
+            <div class="mb-4">
+              <BaseInput v-model="responseText" placeholder="Digite sua resposta..."
+                class="w-full bg-dark/50 border-gray-700 focus:border-primary" :error="responseError" />
+              <p v-if="responseError" class="text-red-500 text-sm mt-1">{{ responseError }}</p>
+            </div>
+            <div class="flex justify-end gap-2">
+              <BaseButton @click="cancelResponse" class="bg-gray-700 hover:bg-gray-600">
+                Cancelar
+              </BaseButton>
+              <BaseButton @click="submitResponse(faq.id)" class="bg-primary hover:bg-primary-dark"
+                :disabled="!responseText">
+                Enviar Resposta
+              </BaseButton>
+            </div>
           </div>
-        </section>
+        </div>
+      </div>
+
+      <!-- Perguntas respondidas -->
+      <div v-for="faq in answeredQuestions" :key="faq.id"
+        class="bg-dark/50 rounded-xl p-6 border border-gray-800 hover:border-primary/50 transition-colors">
+        <div class="flex flex-col h-full">
+          <div class="flex-1">
+            <p class="text-white text-lg mb-2">{{ faq.question }}</p>
+            <div class="flex items-center gap-4 text-sm text-gray-400 mb-4">
+              <span>{{ faq.autor }}</span>
+              <span>{{ formatDate(faq.data) }}</span>
+            </div>
+            <div class="bg-gray-800/50 p-4 rounded-lg border border-gray-700">
+              <p class="text-white">{{ faq.answer }}</p>
+            </div>
+          </div>
+          <div class="flex gap-2 mt-4">
+            <BaseButton @click="deleteQuestion(faq.id)"
+              class="bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/50 w-full">
+              Excluir
+            </BaseButton>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mensagem quando não há perguntas -->
+      <div v-if="!isLoading && (!questions || questions.length === 0)"
+        class="col-span-full text-center py-12 bg-dark/50 rounded-xl">
+        <p class="text-white text-lg">Nenhuma pergunta encontrada.</p>
+        <p class="text-gray-400 mt-2">Clique em "Nova Pergunta" para começar.</p>
       </div>
     </div>
 
-    <!-- Modal de Nova Pergunta -->
-    <NewQuestionModal v-if="showNewQuestionModal" @close="showNewQuestionModal = false" @submit="handleNewQuestion" />
+    <!-- Modal de nova pergunta -->
+    <NewQuestionModal v-if="showNewQuestionModal" :show="showNewQuestionModal" @close="showNewQuestionModal = false"
+      @submit="handleNewQuestion" :produtos="produtos" />
   </div>
 </template>
 
-<script>
-import BaseButton from '@/components/base/BaseButton.vue'
-import BaseInput from '@/components/base/BaseInput.vue'
-import FaqCard from '@/components/faq/FaqCard.vue'
-import NewQuestionModal from '@/components/faq/NewQuestionModal.vue'
-import { useFaqStore } from '@/store/faq'
+<script setup>
+import { ref, computed, onMounted } from 'vue'
+import { useFaqStore } from '../store/faq'
+import BaseButton from '../components/base/BaseButton.vue'
+import BaseInput from '../components/base/BaseInput.vue'
+import { productService } from '../services/api'
+import NewQuestionModal from '../components/faq/NewQuestionModal.vue'
 
-export default {
-  name: 'FAQView',
-  components: {
-    BaseButton,
-    BaseInput,
-    FaqCard,
-    NewQuestionModal
-  },
-  data() {
-    return {
-      openPendingFaqs: [],
-      openGeneralFaqs: [],
-      showNewQuestionModal: false,
-      faqStore: useFaqStore()
-    }
-  },
-  computed: {
-    perguntasSemResposta() {
-      return this.faqStore.questions.filter(q => !q.answer)
-    },
-    faqsGerais() {
-      return this.faqStore.questions.filter(q => q.answer)
-    },
-    perguntasSemRespostaOrdenadas() {
-      return [...this.perguntasSemResposta].sort((a, b) => b.data - a.data)
-    }
-  },
-  methods: {
-    togglePendingFaq(faqId) {
-      if (this.openPendingFaqs.includes(faqId)) {
-        this.openPendingFaqs = []
-        this.openGeneralFaqs = []
-      } else {
-        this.openPendingFaqs = [faqId]
-        this.openGeneralFaqs = []
-      }
-    },
-    toggleGeneralFaq(faqId) {
-      if (this.openGeneralFaqs.includes(faqId)) {
-        this.openGeneralFaqs = []
-        this.openPendingFaqs = []
-      } else {
-        this.openGeneralFaqs = [faqId]
-        this.openPendingFaqs = []
-      }
-    },
-    async handleNewQuestion(formData) {
-      try {
-        const questionData = {
-          type: formData.tipo,
-          productId: formData.produtoId,
-          question: formData.question,
-          author: formData.autor
-        }
+const faqStore = useFaqStore()
+const showNewQuestionModal = ref(false)
+const activeResponseForm = ref(null)
+const responseText = ref('')
+const responseError = ref('')
+const successMessage = ref('')
+const produtos = ref([])
+const isLoading = ref(true)
+const questions = ref([])
 
-        await this.faqStore.addQuestion(questionData)
-        this.showNewQuestionModal = false
-      } catch (error) {
-        console.error('Error adding question:', error)
-      }
-    },
-    async responderPergunta(faq) {
-      if (!faq.novaResposta) {
-        faq.respostaError = 'Por favor, digite uma resposta'
-        return
-      }
+const answeredQuestions = computed(() => {
+  if (!Array.isArray(questions.value)) return []
+  return questions.value.filter(q => q && q.answer)
+})
 
-      try {
-        await this.faqStore.updateQuestion(faq.id, {
-          answer: faq.novaResposta
-        })
-      } catch (error) {
-        console.error('Error answering question:', error)
-      }
-    }
-  },
-  async created() {
-    await this.faqStore.getQuestions()
+const unansweredQuestions = computed(() => {
+  if (!Array.isArray(questions.value)) return []
+  return questions.value.filter(q => q && !q.answer)
+})
+
+const formatDate = (date) => {
+  if (!date) return ''
+  return new Date(date).toLocaleDateString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+}
+
+const loadData = async () => {
+  try {
+    isLoading.value = true
+    console.log('Iniciando carregamento de dados...')
+
+    // Primeiro carrega as perguntas
+    const questionsResponse = await faqStore.getQuestions()
+    console.log('Perguntas carregadas:', questionsResponse)
+
+    // Depois carrega os produtos
+    const productsResponse = await loadProducts()
+    console.log('Produtos carregados:', productsResponse)
+
+    // Atualiza o estado local com as perguntas do store
+    questions.value = Array.isArray(faqStore.questions) ? faqStore.questions : []
+    console.log('Estado atualizado:', {
+      questions: questions.value,
+      answered: answeredQuestions.value,
+      unanswered: unansweredQuestions.value
+    })
+  } catch (err) {
+    console.error('Erro ao carregar dados:', err)
+    successMessage.value = 'Erro ao carregar dados. Por favor, tente novamente.'
+  } finally {
+    isLoading.value = false
   }
 }
+
+const loadProducts = async () => {
+  try {
+    const response = await productService.getAllProducts()
+    produtos.value = response.data
+    return response.data
+  } catch (err) {
+    console.error('Erro ao carregar produtos:', err)
+    throw err
+  }
+}
+
+const handleNewQuestion = async (questionData) => {
+  try {
+    await faqStore.addQuestion(questionData)
+    showNewQuestionModal.value = false
+    successMessage.value = 'Pergunta enviada com sucesso!'
+    setTimeout(() => {
+      successMessage.value = ''
+    }, 3000)
+  } catch (err) {
+    console.error('Erro ao adicionar pergunta:', err)
+  }
+}
+
+const toggleResponseForm = (id) => {
+  if (activeResponseForm.value === id) {
+    activeResponseForm.value = null
+    responseText.value = ''
+    responseError.value = ''
+  } else {
+    activeResponseForm.value = id
+  }
+}
+
+const cancelResponse = () => {
+  activeResponseForm.value = null
+  responseText.value = ''
+  responseError.value = ''
+}
+
+const submitResponse = async (id) => {
+  if (!responseText.value.trim()) {
+    responseError.value = 'Por favor, digite uma resposta'
+    return
+  }
+
+  try {
+    await faqStore.updateQuestion(id, {
+      answer: responseText.value.trim()
+    })
+
+    successMessage.value = 'Resposta enviada com sucesso!'
+    setTimeout(() => {
+      successMessage.value = ''
+    }, 3000)
+
+    responseText.value = ''
+    activeResponseForm.value = null
+  } catch (err) {
+    console.error('Erro ao enviar resposta:', err)
+    responseError.value = 'Erro ao enviar resposta. Por favor, tente novamente.'
+  }
+}
+
+const deleteQuestion = async (id) => {
+  if (!confirm('Tem certeza que deseja excluir esta pergunta?')) {
+    return
+  }
+
+  try {
+    await faqStore.deleteQuestion(id)
+    successMessage.value = 'Pergunta excluída com sucesso!'
+    setTimeout(() => {
+      successMessage.value = ''
+    }, 3000)
+  } catch (err) {
+    console.error('Erro ao excluir pergunta:', err)
+  }
+}
+
+onMounted(async () => {
+  console.log('Componente montado, iniciando carregamento...')
+  await loadData()
+})
 </script>
 
 <style scoped>
-.title-primary {
-  @apply text-4xl font-semibold text-transparent bg-clip-text bg-gradient-to-r from-[#00FF88] to-[#00cc6a] font-['Playfair_Display'] tracking-wide;
-}
-
-.title-secondary {
-  @apply text-3xl font-semibold text-transparent bg-clip-text bg-gradient-to-r from-[#00FF88] to-[#00cc6a] font-['Playfair_Display'] tracking-wide mb-8;
-}
-
-.badge {
-  @apply px-4 py-2 bg-gradient-to-r from-[#ff0000] to-[#cc0000] text-white rounded-full text-lg font-['Lora'] shadow-lg shadow-red-500/20;
-}
-
-.faq-answer {
-  @apply text-gray-300 text-lg leading-relaxed mb-6 font-['Lora'];
-}
-
-/* Container principal */
-.container {
-  @apply max-w-5xl mx-auto px-4 py-12;
-}
-
-/* Card principal */
-.bg-[#1a1a1a] {
-  @apply shadow-xl shadow-[#00FF88]/5 backdrop-blur-sm;
-}
-
-/* Cabeçalho */
-header {
-  @apply p-8 border-b border-[#00FF88]/20 bg-gradient-to-r from-[#1a1a1a] to-[#1a1a1a]/95;
-}
-
-/* Seções */
-section {
-  @apply transition-all duration-300 ease-in-out;
-}
-
-/* Animação suave para os cards */
-.space-y-6>* {
-  @apply transition-all duration-300 ease-in-out;
+.bg-dark {
+  background-color: #1a1a1a;
 }
 </style>

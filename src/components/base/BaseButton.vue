@@ -1,7 +1,7 @@
 <template>
   <button 
     :class="[
-      'px-6 py-3 rounded-lg transition-colors font-[\'Playfair_Display\'] text-xl',
+      'px-4 sm:px-6 py-2 sm:py-3 rounded-lg transition-colors font-[\'Playfair_Display\'] text-base sm:text-xl',
       variants[variant],
       { 'opacity-50 cursor-not-allowed': disabled }
     ]"

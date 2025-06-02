@@ -5,6 +5,12 @@ import './assets/tailwind.css'
 import { faqPlugin } from './store/faq'
 
 const app = createApp(App)
+
+// Configurar plugins
 app.use(router)
 app.use(faqPlugin)
-app.mount('#app')
+
+// Montar a aplicação após garantir que o DOM está pronto
+window.addEventListener('load', () => {
+    app.mount('#app')
+})

@@ -97,9 +97,10 @@
 </template>
 
 <script>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import BaseButton from '@/components/base/BaseButton.vue'
 import BaseInput from '@/components/base/BaseInput.vue'
+import { productService } from '@/services/api'
 
 export default {
   name: 'ProdutosView',
@@ -118,15 +119,37 @@ export default {
       available: true
     })
 
+    const carregarProdutos = async () => {
+      try {
+        const response = await productService.getAllProducts()
+        produtos.value = response.data.map(p => ({
+          id: p.id,
+          name: p.name,
+          description: p.description,
+          price: p.price,
+          available: p.available
+        }))
+      } catch (error) {
+        console.error('Erro ao carregar produtos:', error)
+        alert('Erro ao carregar produtos. Tente novamente.')
+      }
+    }
+
     const editarProduto = (produto) => {
       editingProduto.value = produto
       formData.value = { ...produto }
       showAddModal.value = true
     }
 
-    const excluirProduto = (id) => {
+    const excluirProduto = async (id) => {
       if (confirm('Tem certeza que deseja excluir este produto?')) {
-        produtos.value = produtos.value.filter(p => p.id !== id)
+        try {
+          await productService.deleteProduct(id)
+          produtos.value = produtos.value.filter(p => p.id !== id)
+        } catch (error) {
+          console.error('Erro ao excluir produto:', error)
+          alert('Erro ao excluir produto. Tente novamente.')
+        }
       }
     }
 
@@ -141,23 +164,30 @@ export default {
       }
     }
 
-    const salvarProduto = () => {
-      if (editingProduto.value) {
-        // Editando produto existente
-        const index = produtos.value.findIndex(p => p.id === editingProduto.value.id)
-        if (index !== -1) {
-          produtos.value[index] = { ...produtos.value[index], ...formData.value }
+    const salvarProduto = async () => {
+      try {
+        if (editingProduto.value) {
+          // Editando produto existente
+          const response = await productService.updateProduct(editingProduto.value.id, formData.value)
+          const index = produtos.value.findIndex(p => p.id === editingProduto.value.id)
+          if (index !== -1) {
+            produtos.value[index] = response.data
+          }
+        } else {
+          // Adicionando novo produto
+          const response = await productService.createProduct(formData.value)
+          produtos.value.push(response.data)
         }
-      } else {
-        // Adicionando novo produto
-        const newId = produtos.value.length > 0 ? Math.max(...produtos.value.map(p => p.id)) + 1 : 1
-        produtos.value.push({
-          id: newId,
-          ...formData.value
-        })
+        fecharModal()
+      } catch (error) {
+        console.error('Erro ao salvar produto:', error)
+        alert('Erro ao salvar produto. Tente novamente.')
       }
-      fecharModal()
     }
+
+    onMounted(() => {
+      carregarProdutos()
+    })
 
     return {
       produtos,

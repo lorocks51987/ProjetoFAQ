@@ -27,7 +27,7 @@ npm run dev
 ## Build
 
 Para criar uma versão de produção:
-```bash
+```bash$$
 npm run build
 ```
 
