@@ -33,7 +33,8 @@ const faqStore = {
                     answer: q.answer?.text || q.answer || null,
                     autor: q.author || q.autor || 'Anônimo',
                     data: q.createdAt ? new Date(q.createdAt) : new Date(),
-                    productId: q.productId || null
+                    productId: q.productId || null,
+                    type: q.type || 'GENERAL'
                 }
                 console.log('Pergunta processada:', processed)
                 return processed
@@ -70,7 +71,8 @@ const faqStore = {
                 answer: null,
                 autor: response.data.author || questionData.author || 'Anônimo',
                 data: new Date(response.data.createdAt || new Date()),
-                productId: response.data.productId || questionData.productId || null
+                productId: response.data.productId || questionData.productId || null,
+                type: response.data.type || (questionData.productId ? 'PRODUCT' : 'GENERAL')
             }
 
             console.log('Nova pergunta processada:', newQuestion)

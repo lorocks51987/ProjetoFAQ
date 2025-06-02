@@ -144,7 +144,7 @@ const loadData = async () => {
     console.log('Produtos carregados:', productsResponse)
 
     // Atualiza o estado local com as perguntas do store
-    questions.value = Array.isArray(faqStore.questions) ? faqStore.questions : []
+    questions.value = [...faqStore.questions]
     console.log('Estado atualizado:', {
       questions: questions.value,
       answered: answeredQuestions.value,
@@ -177,8 +177,12 @@ const handleNewQuestion = async (questionData) => {
     setTimeout(() => {
       successMessage.value = ''
     }, 3000)
+    
+    // Atualiza a lista de perguntas
+    questions.value = [...faqStore.questions]
   } catch (err) {
     console.error('Erro ao adicionar pergunta:', err)
+    successMessage.value = 'Erro ao adicionar pergunta. Por favor, tente novamente.'
   }
 }
 
@@ -209,6 +213,9 @@ const submitResponse = async (id) => {
       answer: responseText.value.trim()
     })
 
+    // Atualiza a lista de perguntas após a resposta
+    questions.value = [...faqStore.questions]
+
     successMessage.value = 'Resposta enviada com sucesso!'
     setTimeout(() => {
       successMessage.value = ''
@@ -229,6 +236,8 @@ const deleteQuestion = async (id) => {
 
   try {
     await faqStore.deleteQuestion(id)
+    // Atualiza a lista de perguntas após a exclusão
+    questions.value = [...faqStore.questions]
     successMessage.value = 'Pergunta excluída com sucesso!'
     setTimeout(() => {
       successMessage.value = ''

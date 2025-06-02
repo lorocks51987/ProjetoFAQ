@@ -160,12 +160,33 @@ export default {
         }
 
         const response = await faqService.createQuestion(questionData)
+        
+        // Alerta de sucesso
+        await this.$swal.fire({
+          icon: 'success',
+          title: 'Pergunta enviada com sucesso!',
+          text: 'Sua dúvida foi registrada e será respondida em breve.',
+          confirmButtonColor: '#00FF88',
+          background: '#1a1a1a',
+          color: '#ffffff'
+        })
+
         this.$emit('submit', response.data)
         this.resetForm()
         this.$emit('close')
       } catch (err) {
         console.error('Error submitting question:', err)
         this.error = err.response?.data?.message || 'Erro ao enviar pergunta. Tente novamente.'
+        
+        // Alerta de erro
+        await this.$swal.fire({
+          icon: 'error',
+          title: 'Ops! Algo deu errado',
+          text: this.error,
+          confirmButtonColor: '#00FF88',
+          background: '#1a1a1a',
+          color: '#ffffff'
+        })
       } finally {
         this.isLoading = false
       }

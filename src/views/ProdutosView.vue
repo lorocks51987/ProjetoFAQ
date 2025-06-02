@@ -74,7 +74,11 @@
           <BaseInput v-model="formData.description" label="Descrição" placeholder="Digite a descrição do produto"
             tag="textarea" rows="3" />
 
-          <BaseInput v-model="formData.price" label="Preço" placeholder="R$ 0,00" />
+          <BaseInput 
+            v-model="formData.price" 
+            label="Preço" 
+            placeholder="R$ 0,00"
+            @input="handlePrecoInput" />
 
           <div class="flex items-center space-x-2">
             <input type="checkbox" v-model="formData.available"
@@ -101,6 +105,8 @@ import { ref, onMounted } from 'vue'
 import BaseButton from '@/components/base/BaseButton.vue'
 import BaseInput from '@/components/base/BaseInput.vue'
 import { productService } from '@/services/api'
+import Swal from 'sweetalert2'
+import { useRouter } from 'vue-router'
 
 export default {
   name: 'ProdutosView',
@@ -109,6 +115,7 @@ export default {
     BaseInput
   },
   setup() {
+    const router = useRouter()
     const produtos = ref([])
     const showAddModal = ref(false)
     const editingProduto = ref(null)
@@ -119,9 +126,34 @@ export default {
       available: true
     })
 
+    const verificarAutenticacao = () => {
+      const token = localStorage.getItem('token')
+      if (!token) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Atenção',
+          text: 'Você precisa estar logado para gerenciar produtos.',
+          confirmButtonColor: '#00FF88',
+          background: '#1a1a1a',
+          color: '#ffffff'
+        }).then(() => {
+          router.push('/login')
+        })
+        return false
+      }
+      return true
+    }
+
     const carregarProdutos = async () => {
       try {
+        console.log('Iniciando carregamento de produtos...')
         const response = await productService.getAllProducts()
+        console.log('Resposta da API:', response)
+        
+        if (!response || !response.data) {
+          throw new Error('Resposta inválida da API')
+        }
+
         produtos.value = response.data.map(p => ({
           id: p.id,
           name: p.name,
@@ -129,9 +161,39 @@ export default {
           price: p.price,
           available: p.available
         }))
+        console.log('Produtos carregados com sucesso:', produtos.value)
       } catch (error) {
-        console.error('Erro ao carregar produtos:', error)
-        alert('Erro ao carregar produtos. Tente novamente.')
+        console.error('Erro detalhado ao carregar produtos:', {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status,
+          config: error.config
+        })
+        
+        let errorMessage = 'Não foi possível carregar a lista de produtos. '
+        if (error.response?.status === 401) {
+          errorMessage = 'Você precisa estar logado para visualizar os produtos.'
+          router.push('/login')
+        } else if (error.response?.status === 404) {
+          errorMessage += 'O servidor da API não está respondendo. Verifique se o servidor está online e se a URL está correta.'
+        } else if (error.code === 'ECONNABORTED') {
+          errorMessage += 'O servidor demorou muito para responder. Tente novamente.'
+        } else if (error.response?.status >= 500) {
+          errorMessage += 'Erro no servidor. Tente novamente mais tarde.'
+        } else if (error.message === 'Network Error') {
+          errorMessage += 'Não foi possível conectar ao servidor. Verifique se o servidor está rodando e se a URL está correta.'
+        } else {
+          errorMessage += 'Por favor, tente novamente.'
+        }
+
+        await Swal.fire({
+          icon: 'error',
+          title: 'Erro ao carregar produtos',
+          text: errorMessage,
+          confirmButtonColor: '#00FF88',
+          background: '#1a1a1a',
+          color: '#ffffff'
+        })
       }
     }
 
@@ -142,13 +204,41 @@ export default {
     }
 
     const excluirProduto = async (id) => {
-      if (confirm('Tem certeza que deseja excluir este produto?')) {
+      const result = await Swal.fire({
+        title: 'Tem certeza?',
+        text: "Esta ação não poderá ser revertida!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#00FF88',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Sim, excluir!',
+        cancelButtonText: 'Cancelar',
+        background: '#1a1a1a',
+        color: '#ffffff'
+      })
+
+      if (result.isConfirmed) {
         try {
           await productService.deleteProduct(id)
           produtos.value = produtos.value.filter(p => p.id !== id)
+          await Swal.fire({
+            icon: 'success',
+            title: 'Produto excluído!',
+            text: 'O produto foi excluído com sucesso.',
+            confirmButtonColor: '#00FF88',
+            background: '#1a1a1a',
+            color: '#ffffff'
+          })
         } catch (error) {
           console.error('Erro ao excluir produto:', error)
-          alert('Erro ao excluir produto. Tente novamente.')
+          await Swal.fire({
+            icon: 'error',
+            title: 'Erro ao excluir produto',
+            text: 'Não foi possível excluir o produto. Por favor, tente novamente.',
+            confirmButtonColor: '#00FF88',
+            background: '#1a1a1a',
+            color: '#ffffff'
+          })
         }
       }
     }
@@ -164,29 +254,173 @@ export default {
       }
     }
 
+    const formatarPreco = (valor) => {
+      // Remove tudo que não é número ou vírgula
+      let numero = valor.replace(/[^\d,]/g, '')
+      
+      // Garante que só tem uma vírgula
+      const partes = numero.split(',')
+      if (partes.length > 2) {
+        numero = partes[0] + ',' + partes.slice(1).join('')
+      }
+      
+      // Formata como moeda
+      if (numero) {
+        const numeroFormatado = new Intl.NumberFormat('pt-BR', {
+          style: 'currency',
+          currency: 'BRL'
+        }).format(parseFloat(numero.replace(',', '.')))
+        return numeroFormatado
+      }
+      return ''
+    }
+
+    const handlePrecoInput = (event) => {
+      const valor = event.target.value
+      formData.value.price = formatarPreco(valor)
+    }
+
     const salvarProduto = async () => {
+      if (!verificarAutenticacao()) {
+        return
+      }
+
       try {
+        // Validação dos campos
+        if (!formData.value.name.trim()) {
+          await Swal.fire({
+            icon: 'error',
+            title: 'Erro ao salvar produto',
+            text: 'O nome do produto é obrigatório.',
+            confirmButtonColor: '#00FF88',
+            background: '#1a1a1a',
+            color: '#ffffff'
+          })
+          return
+        }
+
+        if (!formData.value.description.trim()) {
+          await Swal.fire({
+            icon: 'error',
+            title: 'Erro ao salvar produto',
+            text: 'A descrição do produto é obrigatória.',
+            confirmButtonColor: '#00FF88',
+            background: '#1a1a1a',
+            color: '#ffffff'
+          })
+          return
+        }
+
+        // Formatação do preço
+        const precoNumerico = parseFloat(formData.value.price.replace(/[^\d,]/g, '').replace(',', '.'))
+        if (isNaN(precoNumerico) || precoNumerico <= 0) {
+          await Swal.fire({
+            icon: 'error',
+            title: 'Erro ao salvar produto',
+            text: 'O preço deve ser um valor válido maior que zero.',
+            confirmButtonColor: '#00FF88',
+            background: '#1a1a1a',
+            color: '#ffffff'
+          })
+          return
+        }
+
+        const produtoParaEnviar = {
+          ...formData.value,
+          price: precoNumerico
+        }
+
+        console.log('[ProdutosView] Enviando produto:', produtoParaEnviar)
+
         if (editingProduto.value) {
           // Editando produto existente
-          const response = await productService.updateProduct(editingProduto.value.id, formData.value)
+          console.log('[ProdutosView] Atualizando produto:', editingProduto.value.id)
+          const response = await productService.updateProduct(editingProduto.value.id, produtoParaEnviar)
+          console.log('[ProdutosView] Resposta da atualização:', response)
+          
+          if (!response || !response.data) {
+            throw new Error('Resposta inválida da API')
+          }
+
           const index = produtos.value.findIndex(p => p.id === editingProduto.value.id)
           if (index !== -1) {
             produtos.value[index] = response.data
           }
+          await Swal.fire({
+            icon: 'success',
+            title: 'Produto atualizado!',
+            text: 'As alterações foram salvas com sucesso.',
+            confirmButtonColor: '#00FF88',
+            background: '#1a1a1a',
+            color: '#ffffff'
+          })
         } else {
           // Adicionando novo produto
-          const response = await productService.createProduct(formData.value)
+          console.log('[ProdutosView] Criando novo produto')
+          const response = await productService.createProduct(produtoParaEnviar)
+          console.log('[ProdutosView] Resposta da criação:', response)
+          
+          if (!response || !response.data) {
+            throw new Error('Resposta inválida da API')
+          }
+
           produtos.value.push(response.data)
+          await Swal.fire({
+            icon: 'success',
+            title: 'Produto adicionado!',
+            text: 'O novo produto foi cadastrado com sucesso.',
+            confirmButtonColor: '#00FF88',
+            background: '#1a1a1a',
+            color: '#ffffff'
+          })
         }
         fecharModal()
       } catch (error) {
-        console.error('Erro ao salvar produto:', error)
-        alert('Erro ao salvar produto. Tente novamente.')
+        console.error('[ProdutosView] Erro ao salvar produto:', {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          config: error.config,
+          stack: error.stack
+        })
+        
+        let errorMessage = 'Não foi possível salvar o produto. '
+        
+        if (error.response?.status === 401) {
+          errorMessage = 'Você precisa estar logado para realizar esta ação. Por favor, faça login e tente novamente.'
+          router.push('/login')
+        } else if (error.response?.status === 404) {
+          errorMessage += 'O servidor da API não está respondendo. Verifique se o servidor está online e se a URL está correta.'
+        } else if (error.code === 'ECONNABORTED') {
+          errorMessage += 'O servidor demorou muito para responder. Tente novamente.'
+        } else if (error.response?.status >= 500) {
+          errorMessage += 'Erro no servidor. Tente novamente mais tarde.'
+        } else if (error.message === 'Network Error' || error.code === 'ERR_NETWORK') {
+          errorMessage += 'Não foi possível conectar ao servidor. Verifique se o servidor está rodando e se a URL está correta.'
+        } else if (error.response?.data?.message) {
+          errorMessage += error.response.data.message
+        } else if (error.message) {
+          errorMessage += error.message
+        } else {
+          errorMessage += 'Por favor, tente novamente.'
+        }
+
+        await Swal.fire({
+          icon: 'error',
+          title: 'Erro ao salvar produto',
+          text: errorMessage,
+          confirmButtonColor: '#00FF88',
+          background: '#1a1a1a',
+          color: '#ffffff'
+        })
       }
     }
 
     onMounted(() => {
-      carregarProdutos()
+      if (verificarAutenticacao()) {
+        carregarProdutos()
+      }
     })
 
     return {
@@ -197,7 +431,8 @@ export default {
       editarProduto,
       excluirProduto,
       fecharModal,
-      salvarProduto
+      salvarProduto,
+      handlePrecoInput
     }
   }
 }
