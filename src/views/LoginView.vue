@@ -50,6 +50,7 @@
 <script>
 import backgroundImage from '@/assets/images/fundo.png'
 import { authService } from '@/services/api'
+import { setUserRole } from '@/services/auth'
 
 export default {
   name: 'LoginView',
@@ -84,12 +85,12 @@ export default {
       try {
         const response = await authService.login(this.formData)
         localStorage.setItem('token', response.data.token)
+        // Define o papel do usuário como 'user' por padrão
+        setUserRole('user')
         this.$router.push('/')
       } catch (err) {
         this.error = err.response?.data?.message || 'Erro ao fazer login'
         console.error('Login error:', err)
-        // Por enquanto, vamos redirecionar mesmo com erro para facilitar o desenvolvimento
-        this.$router.push('/')
       } finally {
         this.isLoading = false
       }

@@ -11,6 +11,11 @@
       </BaseButton>
     </div>
 
+    <!-- Mensagem de sucesso -->
+    <div v-if="successMessage" class="mb-4 p-4 bg-[#00FF88]/20 text-[#00FF88] rounded-lg">
+      {{ successMessage }}
+    </div>
+
     <!-- Lista de FAQs -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       <!-- Perguntas sem resposta -->
@@ -98,8 +103,12 @@ import BaseButton from '../components/base/BaseButton.vue'
 import BaseInput from '../components/base/BaseInput.vue'
 import { productService } from '../services/api'
 import NewQuestionModal from '../components/faq/NewQuestionModal.vue'
+import Swal from 'sweetalert2'
+import { useRouter } from 'vue-router'
+import { hasPermission } from '@/services/auth'
 
 const faqStore = useFaqStore()
+const router = useRouter()
 const showNewQuestionModal = ref(false)
 const activeResponseForm = ref(null)
 const responseText = ref('')
@@ -130,6 +139,39 @@ const formatDate = (date) => {
   })
 }
 
+const verificarAutenticacao = () => {
+  const token = localStorage.getItem('token')
+  if (!token) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Atenção',
+      text: 'Você precisa estar logado para acessar o FAQ.',
+      confirmButtonColor: '#00FF88',
+      background: '#1a1a1a',
+      color: '#ffffff'
+    }).then(() => {
+      router.push('/login')
+    })
+    return false
+  }
+  return true
+}
+
+const verificarPermissao = (acao) => {
+  if (!hasPermission(acao)) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Acesso Negado',
+      text: 'Você não tem permissão para realizar esta ação.',
+      confirmButtonColor: '#00FF88',
+      background: '#1a1a1a',
+      color: '#ffffff'
+    })
+    return false
+  }
+  return true
+}
+
 const loadData = async () => {
   try {
     isLoading.value = true
@@ -144,7 +186,7 @@ const loadData = async () => {
     console.log('Produtos carregados:', productsResponse)
 
     // Atualiza o estado local com as perguntas do store
-    questions.value = [...faqStore.questions]
+    questions.value = faqStore.questions.value
     console.log('Estado atualizado:', {
       questions: questions.value,
       answered: answeredQuestions.value,
@@ -203,6 +245,8 @@ const cancelResponse = () => {
 }
 
 const submitResponse = async (id) => {
+  if (!verificarPermissao('create:question')) return
+
   if (!responseText.value.trim()) {
     responseError.value = 'Por favor, digite uma resposta'
     return
@@ -230,26 +274,49 @@ const submitResponse = async (id) => {
 }
 
 const deleteQuestion = async (id) => {
-  if (!confirm('Tem certeza que deseja excluir esta pergunta?')) {
-    return
-  }
+  if (!verificarPermissao('delete:question')) return
 
-  try {
-    await faqStore.deleteQuestion(id)
-    // Atualiza a lista de perguntas após a exclusão
-    questions.value = [...faqStore.questions]
-    successMessage.value = 'Pergunta excluída com sucesso!'
-    setTimeout(() => {
-      successMessage.value = ''
-    }, 3000)
-  } catch (err) {
-    console.error('Erro ao excluir pergunta:', err)
+  const result = await Swal.fire({
+    title: 'Tem certeza?',
+    text: "Esta ação não poderá ser revertida!",
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#00FF88',
+    cancelButtonColor: '#d33',
+    confirmButtonText: 'Sim, excluir!',
+    cancelButtonText: 'Cancelar',
+    background: '#1a1a1a',
+    color: '#ffffff'
+  })
+
+  if (result.isConfirmed) {
+    try {
+      await faqStore.deleteQuestion(id)
+      // Atualiza a lista de perguntas após a exclusão
+      questions.value = [...faqStore.questions]
+      successMessage.value = 'Pergunta excluída com sucesso!'
+      setTimeout(() => {
+        successMessage.value = ''
+      }, 3000)
+    } catch (err) {
+      console.error('Erro ao excluir pergunta:', err)
+      Swal.fire({
+        icon: 'error',
+        title: 'Erro ao excluir pergunta',
+        text: 'Não foi possível excluir a pergunta. Por favor, tente novamente.',
+        confirmButtonColor: '#00FF88',
+        background: '#1a1a1a',
+        color: '#ffffff'
+      })
+    }
   }
 }
 
 onMounted(async () => {
   console.log('Componente montado, iniciando carregamento...')
-  await loadData()
+  if (verificarAutenticacao()) {
+    await loadData()
+  }
 })
 </script>
 

@@ -57,6 +57,41 @@
             </div>
           </div>
         </div>
+
+        <!-- Paginação -->
+        <div v-if="totalPages > 1" class="mt-8 flex justify-center items-center space-x-4">
+          <BaseButton 
+            @click="previousPage" 
+            :disabled="currentPage === 1"
+            variant="secondary"
+          >
+            Anterior
+          </BaseButton>
+          
+          <div class="flex items-center space-x-2">
+            <button 
+              v-for="page in totalPages" 
+              :key="page"
+              @click="goToPage(page)"
+              :class="[
+                'px-3 py-1 rounded-lg transition-colors',
+                currentPage === page 
+                  ? 'bg-[#00FF88] text-[#1a1a1a]' 
+                  : 'text-[#00FF88] hover:bg-[#00FF88]/10'
+              ]"
+            >
+              {{ page }}
+            </button>
+          </div>
+
+          <BaseButton 
+            @click="nextPage" 
+            :disabled="currentPage === totalPages"
+            variant="secondary"
+          >
+            Próxima
+          </BaseButton>
+        </div>
       </div>
     </div>
 
@@ -101,12 +136,13 @@
 </template>
 
 <script>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import BaseButton from '@/components/base/BaseButton.vue'
 import BaseInput from '@/components/base/BaseInput.vue'
 import { productService } from '@/services/api'
 import Swal from 'sweetalert2'
 import { useRouter } from 'vue-router'
+import { hasPermission } from '@/services/auth'
 
 export default {
   name: 'ProdutosView',
@@ -126,6 +162,38 @@ export default {
       available: true
     })
 
+    // Configurações de paginação
+    const currentPage = ref(1)
+    const itemsPerPage = ref(12) // Número de produtos por página
+    const totalItems = ref(0)
+
+    // Computed properties para paginação
+    const totalPages = computed(() => Math.ceil(totalItems.value / itemsPerPage.value))
+    const paginatedProducts = computed(() => {
+      const start = (currentPage.value - 1) * itemsPerPage.value
+      const end = start + itemsPerPage.value
+      return produtos.value.slice(start, end)
+    })
+
+    // Funções de paginação
+    const goToPage = (page) => {
+      if (page >= 1 && page <= totalPages.value) {
+        currentPage.value = page
+      }
+    }
+
+    const nextPage = () => {
+      if (currentPage.value < totalPages.value) {
+        currentPage.value++
+      }
+    }
+
+    const previousPage = () => {
+      if (currentPage.value > 1) {
+        currentPage.value--
+      }
+    }
+
     const verificarAutenticacao = () => {
       const token = localStorage.getItem('token')
       if (!token) {
@@ -138,6 +206,21 @@ export default {
           color: '#ffffff'
         }).then(() => {
           router.push('/login')
+        })
+        return false
+      }
+      return true
+    }
+
+    const verificarPermissao = (acao) => {
+      if (!hasPermission(acao)) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Acesso Negado',
+          text: 'Você não tem permissão para realizar esta ação.',
+          confirmButtonColor: '#00FF88',
+          background: '#1a1a1a',
+          color: '#ffffff'
         })
         return false
       }
@@ -161,6 +244,7 @@ export default {
           price: p.price,
           available: p.available
         }))
+        totalItems.value = produtos.value.length
         console.log('Produtos carregados com sucesso:', produtos.value)
       } catch (error) {
         console.error('Erro detalhado ao carregar produtos:', {
@@ -198,12 +282,15 @@ export default {
     }
 
     const editarProduto = (produto) => {
+      if (!verificarPermissao('create:product')) return
       editingProduto.value = produto
       formData.value = { ...produto }
       showAddModal.value = true
     }
 
     const excluirProduto = async (id) => {
+      if (!verificarPermissao('delete:product')) return
+
       const result = await Swal.fire({
         title: 'Tem certeza?',
         text: "Esta ação não poderá ser revertida!",
@@ -281,9 +368,8 @@ export default {
     }
 
     const salvarProduto = async () => {
-      if (!verificarAutenticacao()) {
-        return
-      }
+      if (!verificarAutenticacao()) return
+      if (!verificarPermissao('create:product')) return
 
       try {
         // Validação dos campos
@@ -424,7 +510,7 @@ export default {
     })
 
     return {
-      produtos,
+      produtos: paginatedProducts,
       showAddModal,
       editingProduto,
       formData,
@@ -432,7 +518,14 @@ export default {
       excluirProduto,
       fecharModal,
       salvarProduto,
-      handlePrecoInput
+      handlePrecoInput,
+      // Adicionar retornos para paginação
+      currentPage,
+      totalPages,
+      itemsPerPage,
+      goToPage,
+      nextPage,
+      previousPage
     }
   }
 }
